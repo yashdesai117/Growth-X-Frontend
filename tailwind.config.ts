@@ -9,7 +9,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-dm-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-dm-serif)", "ui-serif", "Georgia", "serif"],
+      },
       colors: {
+        brand: {
+          DEFAULT: "#22C55E",
+          hover: "#16A34A",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -55,3 +63,4 @@ const config: Config = {
 };
 
 export default config;
+

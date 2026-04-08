@@ -38,22 +38,44 @@ export async function apiClient<T>(
     data: { session },
   } = await supabase.auth.getSession();
 
+  // Build headers — explicit headers from caller take priority over session token.
+  // This is important for fresh signUp flows where we pass the token directly
+  // before it propagates to getSession().
+  const callerHeaders = (init.headers as Record<string, string>) ?? {};
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(init.headers as Record<string, string>),
   };
 
-  if (session?.access_token) {
+  // Add session token only if caller didn't already provide Authorization
+  if (session?.access_token && !callerHeaders["Authorization"]) {
     headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
+  // Caller headers always win (including Authorization if explicitly passed)
+  Object.assign(headers, callerHeaders);
+
   const url = `${env.apiBaseUrl}${path}`;
 
-  const response = await fetch(url, {
-    ...init,
-    headers,
-  });
+  // 10-second timeout — prevents hanging if the backend is down
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
-  const envelope = (await response.json()) as ResponseEnvelope<T>;
-  return envelope;
+  try {
+    const response = await fetch(url, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+
+    const envelope = (await response.json()) as ResponseEnvelope<T>;
+    return envelope;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Request timed out — backend may be offline");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

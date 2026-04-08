@@ -16,10 +16,21 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PATHS = ["/dashboard", "/settings"];
-const AUTH_ONLY_PATHS = ["/login"];
+const PROTECTED_PATHS = ["/dashboard", "/settings", "/channels", "/skus", "/insights"];
+const AUTH_ONLY_PATHS = ["/login", "/register"];
+
+
+
 
 export async function middleware(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // If env vars missing, skip middleware — don't crash
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
