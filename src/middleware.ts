@@ -16,7 +16,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PATHS = ["/dashboard", "/settings", "/channels", "/skus", "/insights"];
+const PROTECTED_PATHS = ["/overview", "/channels", "/skus", "/insights", "/settings"];
 const AUTH_ONLY_PATHS = ["/login", "/register"];
 
 
@@ -72,10 +72,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Auth-only routes — redirect to /dashboard if already authed
+  // Auth-only routes — redirect to /overview if already authed
   if (AUTH_ONLY_PATHS.some((path) => pathname.startsWith(path))) {
     if (session) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/overview", request.url));
     }
   }
 

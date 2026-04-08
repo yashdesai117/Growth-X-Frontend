@@ -91,7 +91,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard/overview");
+    router.push("/overview");
   }
 
   return (
