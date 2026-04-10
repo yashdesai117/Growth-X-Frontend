@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   fetchChannels,
   fetchSyncStatus,
@@ -10,7 +11,9 @@ import {
 } from "@/lib/dashboard";
 import { ChannelCard } from "@/components/channels/ChannelCard";
 import type { ChannelStatus, SyncStatus, CostInput } from "@/types/api";
-
+import { apiClient } from "@/lib/api/client";
+import { createClient } from "@/lib/supabase/client";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 // ─── Cost input form ──────────────────────────────────────────────────────────
 
 type CostFormState = {
@@ -57,7 +60,7 @@ const STUB_CHANNELS: ChannelStatus[] = [
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function ChannelsPage() {
+function ChannelsPageContent() {
   const [channels, setChannels] = useState<ChannelStatus[]>([]);
   const [costInputs, setCostInputs] = useState<CostInput[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
@@ -106,6 +109,44 @@ export default function ChannelsPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Re-fetch when Shopify OAuth redirects back with ?shopify=connected.
+  // We MUST wait for Supabase to rehydrate the session from cookies after the
+  // full-page OAuth redirect — calling loadData() immediately races against
+  // getSession() returning null, which sends an unauthenticated request and
+  // causes 'Failed to fetch' on the CORS preflight of the backend's 401.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("shopify") !== "connected") return;
+
+    const supabase = createClient();
+    let settled = false;
+
+    // Wait for the session to be confirmed, then refresh channel data
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session && !settled) {
+          settled = true;
+          subscription.unsubscribe();
+          loadData();
+        }
+      }
+    );
+
+    // Safety fallback: if auth event never fires in 3s, try anyway
+    const fallback = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        subscription.unsubscribe();
+        loadData();
+      }
+    }, 3000);
+
+    return () => {
+      clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
+  }, [searchParams, loadData]);
 
   // Merge real channels with stubs (show stubs for unconnected channels not in API response)
   const liveChannelNames = new Set(channels.map((c) => c.channel));
@@ -194,7 +235,26 @@ export default function ChannelsPage() {
                           ? { ...ch, sync_status: "running" }
                           : ch
                       }
-                      onConnect={() => alert(`OAuth flow for ${ch.channel} — coming soon`)}
+                      onConnect={() => {
+                        if (ch.channel === "shopify") {
+                          const domain = window.prompt(
+                            "Enter your Shopify store domain",
+                            "yourstore.myshopify.com"
+                          );
+                          if (!domain) return;
+                          apiClient<{ redirect_url: string }>(
+                            "/api/v1/channels/shopify/connect/initiate",
+                            {
+                              method: "POST",
+                              body: JSON.stringify({ shop_domain: domain }),
+                            }
+                          ).then((envelope) => {
+                            if (envelope.data?.redirect_url) {
+                              window.location.href = envelope.data.redirect_url;
+                            }
+                          }).catch(() => alert("Failed to initiate Shopify connection. Try again."));
+                        }
+                      }}
                       onDisconnect={() => alert(`Disconnect ${ch.channel} — coming soon`)}
                       onSyncNow={() => handleSyncNow(ch.channel)}
                     />
@@ -307,5 +367,15 @@ export default function ChannelsPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+// ─── Suspense wrapper (required by Next.js 14 for useSearchParams) ────────────
+
+export default function ChannelsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChannelsPageContent />
+    </Suspense>
   );
 }
