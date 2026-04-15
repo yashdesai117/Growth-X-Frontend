@@ -226,7 +226,7 @@ function ChannelsPageContent() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {enrichedChannels.map((ch) => {
-                const isComingSoon = ch.channel !== "shopify" && !ch.is_connected;
+                const isComingSoon = ["woocommerce", "flipkart"].includes(ch.channel) && !ch.is_connected;
                 return (
                   <div key={ch.channel} className={isComingSoon ? "opacity-50 pointer-events-none" : ""}>
                     <ChannelCard
@@ -235,7 +235,7 @@ function ChannelsPageContent() {
                           ? { ...ch, sync_status: "running" }
                           : ch
                       }
-                      onConnect={() => {
+                      onConnect={async () => {
                         if (ch.channel === "shopify") {
                           const domain = window.prompt(
                             "Enter your Shopify store domain",
@@ -253,6 +253,35 @@ function ChannelsPageContent() {
                               window.location.href = envelope.data.redirect_url;
                             }
                           }).catch(() => alert("Failed to initiate Shopify connection. Try again."));
+                        }
+
+                        if (ch.channel === "amazon") {
+                          const sellerId = window.prompt(
+                            "Step 1 of 2\n\nEnter your Amazon Seller ID (Merchant Token)\n\nFind it in: Seller Central → Settings → Account Info → Merchant Token\n\nFormat: A2XXXXXXXXXXX"
+                          );
+                          if (!sellerId || !sellerId.trim()) return;
+
+                          const refreshToken = window.prompt(
+                            "Step 2 of 2\n\nEnter your Amazon Refresh Token\n\nYou received this from your Solution Provider Portal app authorization."
+                          );
+                          if (!refreshToken || !refreshToken.trim()) return;
+
+                          try {
+                            await apiClient("/api/v1/channels/amazon/connect/direct", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                seller_id: sellerId.trim(),
+                                refresh_token: refreshToken.trim(),
+                              }),
+                            });
+                            await loadData();
+                          } catch (err) {
+                            alert(
+                              err instanceof Error
+                                ? `Failed to connect Amazon: ${err.message}`
+                                : "Failed to connect Amazon. Please try again."
+                            );
+                          }
                         }
                       }}
                       onDisconnect={() => alert(`Disconnect ${ch.channel} — coming soon`)}
