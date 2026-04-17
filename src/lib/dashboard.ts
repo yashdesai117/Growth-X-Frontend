@@ -131,8 +131,11 @@ export async function createCostInput(data: {
   channel?: string | null;
   effective_from?: string;
 }): Promise<void> {
-  await apiClient("/api/v1/tenant/cost-inputs", {
+  const env = await apiClient("/api/v1/tenant/cost-inputs", {
     method: "POST",
     body: JSON.stringify(data),
   });
+  if (env.status !== "success") {
+    throw new Error(env.error?.message ?? `Failed to save ${data.cost_type}`);
+  }
 }

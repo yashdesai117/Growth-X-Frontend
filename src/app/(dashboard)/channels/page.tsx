@@ -85,8 +85,8 @@ function ChannelsPageContent() {
       setChannels(ch.channels);
       setCostInputs(ci.cost_inputs);
       setForm({
-        packaging_cost: getCostValue(ci.cost_inputs, "packaging_cost"),
-        payment_gateway_fee: getCostValue(ci.cost_inputs, "payment_gateway_fee"),
+        packaging_cost: getCostValue(ci.cost_inputs, "packaging_per_unit"),
+        payment_gateway_fee: getCostValue(ci.cost_inputs, "payment_gateway_fee_pct"),
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load channels");
@@ -180,15 +180,15 @@ function ChannelsPageContent() {
     try {
       const today = new Date().toISOString().slice(0, 10);
       const inputs = [
-        { cost_type: "packaging_cost", value: parseFloat(form.packaging_cost || "0"), channel: "shopify", effective_from: today },
-        { cost_type: "payment_gateway_fee", value: parseFloat(form.payment_gateway_fee || "0"), channel: "shopify", effective_from: today },
+        { cost_type: "packaging_per_unit", value: parseFloat(form.packaging_cost || "0"), effective_from: today },
+        { cost_type: "payment_gateway_fee_pct", value: parseFloat(form.payment_gateway_fee || "0"), effective_from: today },
       ].filter((i) => !isNaN(i.value) && i.value >= 0);
 
       await Promise.all(inputs.map(createCostInput));
       setSaveMessage("Recomputing margins…");
       setTimeout(() => { setSaveMessage("Margins updated. Refresh to see new data."); loadData(); }, 3000);
-    } catch {
-      setSaveMessage("Save failed. Please try again.");
+    } catch (err) {
+      setSaveMessage(err instanceof Error ? `Save failed: ${err.message}` : "Save failed. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -284,7 +284,24 @@ function ChannelsPageContent() {
                           }
                         }
                       }}
-                      onDisconnect={() => alert(`Disconnect ${ch.channel} — coming soon`)}
+                      onDisconnect={async () => {
+                        const confirmed = window.confirm(
+                          `Disconnect ${ch.channel}?\n\nYour historical data will be preserved, but future syncs will stop.`
+                        );
+                        if (!confirmed) return;
+                        try {
+                          await apiClient(`/api/v1/channels/${ch.channel}/disconnect`, {
+                            method: "DELETE",
+                          });
+                          await loadData();
+                        } catch (err) {
+                          alert(
+                            err instanceof Error
+                              ? `Failed to disconnect: ${err.message}`
+                              : "Failed to disconnect. Please try again."
+                          );
+                        }
+                      }}
                       onSyncNow={() => handleSyncNow(ch.channel)}
                     />
                     {isComingSoon && (
