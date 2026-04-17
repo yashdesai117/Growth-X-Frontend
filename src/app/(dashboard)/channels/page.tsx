@@ -153,11 +153,13 @@ function ChannelsPageContent() {
   const stubsToShow = STUB_CHANNELS.filter((s) => !liveChannelNames.has(s.channel));
   const allChannels = [...channels, ...stubsToShow];
 
-  // Enrich Shopify with live sync status
+  // Enrich channels with live sync status
   const enrichedChannels = allChannels.map((ch) => {
-    if (ch.channel === "shopify" && syncStatus?.sync_jobs?.length) {
-      const job = syncStatus.sync_jobs[0];
-      return { ...ch, sync_status: job.status, last_synced_at: job.completed_at };
+    if (syncStatus?.sync_jobs?.length) {
+      const job = syncStatus.sync_jobs.find((j) => j.channel === ch.channel);
+      if (job) {
+        return { ...ch, sync_status: job.status, last_synced_at: job.completed_at };
+      }
     }
     return ch;
   });
