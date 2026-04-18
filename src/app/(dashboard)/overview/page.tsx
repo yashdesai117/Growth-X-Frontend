@@ -8,6 +8,7 @@ import {
   fetchMarginTrend,
   fetchSyncStatus,
   triggerSync,
+  fetchCostInputs,
 } from "@/lib/dashboard";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MarginChart } from "@/components/dashboard/MarginChart";
@@ -67,21 +68,24 @@ export default function OverviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasActiveCosts, setHasActiveCosts] = useState(true);
 
   const loadAll = useCallback(async () => {
     try {
-      const [s, ch, ts, mt, ss] = await Promise.all([
+      const [s, ch, ts, mt, ss, ci] = await Promise.all([
         fetchDashboardSummary(),
         fetchChannels(),
         fetchTopSkus(),
         fetchMarginTrend(),
         fetchSyncStatus(),
+        fetchCostInputs(),
       ]);
       setSummary(s);
       setChannels(ch);
       setTopSkus(ts);
       setTrend(mt);
       setSyncStatus(ss);
+      setHasActiveCosts(ci.cost_inputs.length > 0);
     } catch {
       setError("Failed to load dashboard data");
     } finally {
@@ -159,6 +163,22 @@ export default function OverviewPage() {
       </div>
 
       <div className="p-6 space-y-5 max-w-[1280px]">
+        {/* ── Missing overall costs warning banner ── */}
+        {!hasActiveCosts && !isLoading && (
+          <div className="flex items-start gap-2.5 px-4 py-3 bg-[#EAB308]/5 border border-[#EAB308]/20 rounded-lg">
+            <span className="text-[#EAB308] text-sm mt-0.5 shrink-0">⚠</span>
+            <p className="text-[11px] text-[#EAB308] leading-relaxed">
+              No cost inputs have been configured. Contribution margins cannot be calculated accurately.{" "}
+              <a
+                href="/channels"
+                className="underline underline-offset-2 hover:text-[#FBBF24] transition-colors"
+              >
+                Configure costs on the Channels page.
+              </a>
+            </p>
+          </div>
+        )}
+
         {/* ── Missing data warning banner ── */}
         {hasWarning && !isLoading && (
           <div className="flex items-start gap-2.5 px-4 py-3 bg-[#EAB308]/5 border border-[#EAB308]/20 rounded-lg">
