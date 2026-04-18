@@ -129,6 +129,7 @@ export async function createCostInput(data: {
   cost_type: string;
   value: number;
   channel?: string | null;
+  sku_identifier?: string | null;
   effective_from?: string;
 }): Promise<void> {
   const env = await apiClient("/api/v1/tenant/cost-inputs", {
