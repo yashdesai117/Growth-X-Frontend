@@ -1,24 +1,26 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { fetchInsights, dismissInsight } from "@/lib/dashboard";
+import { fetchInsightsSummary, fetchInsights, dismissInsight } from "@/lib/dashboard";
 import { InsightCard } from "@/components/insights/InsightCard";
-import type { InsightsList, InsightItem } from "@/types/api";
+import type { InsightSummary, InsightsList, InsightItem } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatRelativeTime } from "@/lib/format";
 
-type TabValue = "all" | "high" | "medium" | "low" | "dismissed";
+// Domain 5 eliminated "low" severity — tabs only show high / medium / all / dismissed
+type TabValue = "all" | "high" | "medium" | "dismissed";
 
 const TABS: { value: TabValue; label: string }[] = [
   { value: "all", label: "All" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
   { value: "dismissed", label: "Dismissed" },
 ];
 
-const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
+const SEVERITY_ORDER = { high: 0, medium: 1 } as const;
 
 export default function InsightsPage() {
+  const [summary, setSummary] = useState<InsightSummary | null>(null);
   const [insights, setInsights] = useState<InsightsList | null>(null);
   const [dismissed, setDismissed] = useState<InsightItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
@@ -28,14 +30,16 @@ export default function InsightsPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [active, disc] = await Promise.all([
-        fetchInsights(false),
-        fetchInsights(true),
+      // Three parallel calls — exactly as specified in Domain 7 Section 6
+      const [summaryData, activeData, dismissedData] = await Promise.all([
+        fetchInsightsSummary(),
+        fetchInsights({ is_dismissed: false }),
+        fetchInsights({ is_dismissed: true }),
       ]);
-      setInsights(active);
-      // dismissed items are those in disc but not in active
-      const activeIds = new Set(active.items.map((i) => i.insight_id));
-      setDismissed(disc.items.filter((i) => !activeIds.has(i.insight_id)));
+      setSummary(summaryData);
+      setInsights(activeData);
+      const activeIds = new Set(activeData.items.map((i) => i.insight_id));
+      setDismissed(dismissedData.items.filter((i) => !activeIds.has(i.insight_id)));
     } catch {
       setError("Failed to load insights");
     } finally {
@@ -49,32 +53,34 @@ export default function InsightsPage() {
   const handleDismiss = async (id: string) => {
     if (!insights) return;
     const dismissedItem = insights.items.find((i) => i.insight_id === id);
-    // Remove from active list immediately
     setInsights((prev) => {
       if (!prev) return prev;
-      const updated = prev.items.filter((i) => i.insight_id !== id);
-      const removedSeverity = dismissedItem?.severity;
       return {
         ...prev,
-        items: updated,
+        items: prev.items.filter((i) => i.insight_id !== id),
         total_count: prev.total_count - 1,
-        high_count: removedSeverity === "high" ? prev.high_count - 1 : prev.high_count,
-        medium_count: removedSeverity === "medium" ? prev.medium_count - 1 : prev.medium_count,
-        low_count: removedSeverity === "low" ? prev.low_count - 1 : prev.low_count,
       };
     });
+    // Update summary counts optimistically
     if (dismissedItem) {
+      setSummary((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          total_active_insights: prev.total_active_insights - 1,
+          high_count: dismissedItem.severity === "high" ? prev.high_count - 1 : prev.high_count,
+          medium_count: dismissedItem.severity === "medium" ? prev.medium_count - 1 : prev.medium_count,
+        };
+      });
       setDismissed((prev) => [...prev, { ...dismissedItem, is_dismissed: true }]);
     }
     try {
       await dismissInsight(id);
     } catch {
-      // Rollback on failure
-      load();
+      load(); // Rollback on failure
     }
   };
 
-  // Client-side filter
   const visibleItems: InsightItem[] = (() => {
     if (activeTab === "dismissed") return dismissed;
     if (!insights) return [];
@@ -83,17 +89,33 @@ export default function InsightsPage() {
         ? insights.items
         : insights.items.filter((i) => i.severity === activeTab);
     return [...filtered].sort(
-      (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+      (a, b) =>
+        (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99)
     );
   })();
 
   const counts = {
-    high: insights?.high_count ?? 0,
-    medium: insights?.medium_count ?? 0,
-    low: insights?.low_count ?? 0,
-    all: insights?.total_count ?? 0,
+    high: summary?.high_count ?? 0,
+    medium: summary?.medium_count ?? 0,
+    all: summary?.total_active_insights ?? 0,
     dismissed: dismissed.length,
   };
+
+  // Empty state copy driven by ai_skip_reason (as specified)
+  const emptyStateCopy = (() => {
+    if (activeTab === "dismissed") return { title: "No dismissed insights", sub: "" };
+    if (activeTab !== "all") return { title: `No ${activeTab} severity insights`, sub: "Change the filter or wait for the next computation run." };
+    if (summary?.ai_status === "skipped" && summary?.ai_skip_reason === "insufficient_data") {
+      return {
+        title: "Connect more channels to unlock insights",
+        sub: "GrowthX AI needs data from at least one connected channel to generate insights.",
+      };
+    }
+    return {
+      title: "No insights yet",
+      sub: "Insights are generated automatically after each sync. Check back soon.",
+    };
+  })();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -102,22 +124,22 @@ export default function InsightsPage() {
         <div className="flex items-center justify-between px-6 py-4">
           <h1 className="text-sm font-medium text-white">Insights</h1>
 
-          {/* Severity count badges */}
-          {!isLoading && insights && (
-            <div className="flex items-center gap-2">
-              {counts.high > 0 && (
+          {/* Portfolio health banner — from summary call */}
+          {!isLoading && summary && (
+            <div className="flex items-center gap-3">
+              {summary.high_count > 0 && (
                 <span className="text-[10px] px-2 py-1 bg-[#EF4444]/10 text-[#EF4444] rounded border border-[#EF4444]/20 font-medium tabular-nums">
-                  {counts.high} high
+                  {summary.high_count} high
                 </span>
               )}
-              {counts.medium > 0 && (
+              {summary.medium_count > 0 && (
                 <span className="text-[10px] px-2 py-1 bg-[#EAB308]/10 text-[#EAB308] rounded border border-[#EAB308]/20 font-medium tabular-nums">
-                  {counts.medium} medium
+                  {summary.medium_count} medium
                 </span>
               )}
-              {counts.low > 0 && (
-                <span className="text-[10px] px-2 py-1 bg-[#22C55E]/10 text-[#22C55E] rounded border border-[#22C55E]/20 font-medium tabular-nums">
-                  {counts.low} low
+              {summary.last_generated_at && (
+                <span className="text-[10px] text-[#333]">
+                  Updated {formatRelativeTime(summary.last_generated_at)}
                 </span>
               )}
             </div>
@@ -189,18 +211,12 @@ export default function InsightsPage() {
               {activeTab === "dismissed" ? "✓" : "·"}
             </div>
             <div>
-              <p className="text-[#555] text-sm font-medium">
-                {activeTab === "dismissed"
-                  ? "No dismissed insights"
-                  : activeTab === "all"
-                  ? "No insights yet"
-                  : `No ${activeTab} severity insights`}
-              </p>
-              <p className="text-[#333] text-xs mt-1 leading-relaxed max-w-[260px]">
-                {activeTab === "all" || activeTab === "dismissed"
-                  ? "Insights are generated automatically after each sync. Check back soon."
-                  : "Change the filter or wait for the next computation run."}
-              </p>
+              <p className="text-[#555] text-sm font-medium">{emptyStateCopy.title}</p>
+              {emptyStateCopy.sub && (
+                <p className="text-[#333] text-xs mt-1 leading-relaxed max-w-[260px]">
+                  {emptyStateCopy.sub}
+                </p>
+              )}
             </div>
           </div>
         )}

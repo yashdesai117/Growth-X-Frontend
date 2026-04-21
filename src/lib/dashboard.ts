@@ -12,7 +12,9 @@
  *   fetchChannels          → GET /api/v1/channels
  *   fetchSyncStatus        → GET /api/v1/sync/status
  *   triggerSync            → POST /api/v1/sync/trigger
- *   fetchInsights          → GET /api/v1/insights/
+ *   fetchInsightsSummary   → GET /api/v1/insights/summary     (Call 1 — health banner)
+ *   fetchInsights          → GET /api/v1/insights/             (Call 2 — insight cards)
+ *   fetchRecommendations   → GET /api/v1/insights/recommendations (Call 3 — action list)
  *   dismissInsight         → PATCH /api/v1/insights/{id}/dismiss
  *   fetchCostInputs        → GET /api/v1/tenant/cost-inputs
  *   createCostInput        → POST /api/v1/tenant/cost-inputs
@@ -27,7 +29,9 @@ import type {
   SkuRow,
   ChannelsList,
   SyncStatus,
+  InsightSummary,
   InsightsList,
+  RecommendationsList,
   CostInputsList,
 } from "@/types/api";
 
@@ -106,12 +110,59 @@ export async function triggerSync(channel = "shopify"): Promise<void> {
 }
 
 /**
- * Trailing slash is required — backend route is @router.get("/") mounted at /insights.
- * Omitting the slash causes a 307 redirect which some fetch clients don't follow with POST.
+ * Call 1 — Portfolio health banner.
+ * Lightweight: fires first on page load. Drives the empty-state copy via ai_skip_reason.
  */
-export async function fetchInsights(isDismissed = false): Promise<InsightsList> {
-  const env = await apiClient<InsightsList>(`/api/v1/insights/?is_dismissed=${isDismissed}`);
+export async function fetchInsightsSummary(): Promise<InsightSummary> {
+  const env = await apiClient<InsightSummary>("/api/v1/insights/summary");
+  if (env.status !== "success" || !env.data) throw new Error(env.error?.message ?? "Failed to load insights summary");
+  return env.data;
+}
+
+/**
+ * Call 2 — Paginated insight cards.
+ * Trailing slash required — backend route is @router.get("/") mounted at /insights.
+ */
+export async function fetchInsights(
+  options: {
+    severity?: "high" | "medium";
+    insight_type?: string;
+    channel?: string;
+    is_dismissed?: boolean;
+    cursor?: string;
+    limit?: number;
+  } = {}
+): Promise<InsightsList> {
+  const params = new URLSearchParams();
+  if (options.severity) params.set("severity", options.severity);
+  if (options.insight_type) params.set("insight_type", options.insight_type);
+  if (options.channel) params.set("channel", options.channel);
+  if (options.is_dismissed !== undefined) params.set("is_dismissed", String(options.is_dismissed));
+  if (options.cursor) params.set("cursor", options.cursor);
+  if (options.limit) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  const env = await apiClient<InsightsList>(`/api/v1/insights/${qs ? `?${qs}` : ""}`);
   if (env.status !== "success" || !env.data) throw new Error(env.error?.message ?? "Failed to load insights");
+  return env.data;
+}
+
+/**
+ * Call 3 — Recommendations sorted by impact value descending.
+ */
+export async function fetchRecommendations(
+  options: {
+    metric?: string;
+    time_to_impact?: string;
+    limit?: number;
+  } = {}
+): Promise<RecommendationsList> {
+  const params = new URLSearchParams();
+  if (options.metric) params.set("metric", options.metric);
+  if (options.time_to_impact) params.set("time_to_impact", options.time_to_impact);
+  if (options.limit) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  const env = await apiClient<RecommendationsList>(`/api/v1/insights/recommendations${qs ? `?${qs}` : ""}`);
+  if (env.status !== "success" || !env.data) throw new Error(env.error?.message ?? "Failed to load recommendations");
   return env.data;
 }
 
