@@ -335,51 +335,51 @@ function ChannelsPageContent() {
                             }
                           }).catch(() => alert("Failed to initiate Shopify connection. Try again."));
                         }
-                        if (ch.channel === "amazon") {
-                          try {
-                            const envelope = await apiClient<{ redirect_url: string }>(
-                              "/api/v1/channels/amazon/connect/initiate",
-                              { method: "POST" }
-                            );
-                            if (envelope.data?.redirect_url) {
-                              window.location.href = envelope.data.redirect_url;
-                            }
-                          } catch (err) {
-                            alert(
-                              err instanceof Error
-                                ? `Failed to initiate Amazon connection: ${err.message}`
-                                : "Failed to connect Amazon. Please try again."
-                            );
-                          }
-                        }
                         // if (ch.channel === "amazon") {
-                        //   const sellerId = window.prompt(
-                        //     "Step 1 of 2\n\nEnter your Amazon Seller ID (Merchant Token)\n\nFind it in: Seller Central → Settings → Account Info → Merchant Token\n\nFormat: A2XXXXXXXXXXX"
-                        //   );
-                        //   if (!sellerId || !sellerId.trim()) return;
-
-                        //   const refreshToken = window.prompt(
-                        //     "Step 2 of 2\n\nEnter your Amazon Refresh Token\n\nYou received this from your Solution Provider Portal app authorization."
-                        //   );
-                        //   if (!refreshToken || !refreshToken.trim()) return;
-
                         //   try {
-                        //     await apiClient("/api/v1/channels/amazon/connect/direct", {
-                        //       method: "POST",
-                        //       body: JSON.stringify({
-                        //         seller_id: sellerId.trim(),
-                        //         refresh_token: refreshToken.trim(),
-                        //       }),
-                        //     });
-                        //     await loadData();
+                        //     const envelope = await apiClient<{ redirect_url: string }>(
+                        //       "/api/v1/channels/amazon/connect/initiate",
+                        //       { method: "POST" }
+                        //     );
+                        //     if (envelope.data?.redirect_url) {
+                        //       window.location.href = envelope.data.redirect_url;
+                        //     }
                         //   } catch (err) {
                         //     alert(
                         //       err instanceof Error
-                        //         ? `Failed to connect Amazon: ${err.message}`
+                        //         ? `Failed to initiate Amazon connection: ${err.message}`
                         //         : "Failed to connect Amazon. Please try again."
                         //     );
                         //   }
                         // }
+                        if (ch.channel === "amazon") {
+                          const sellerId = window.prompt(
+                            "Step 1 of 2\n\nEnter your Amazon Seller ID (Merchant Token)\n\nFind it in: Seller Central → Settings → Account Info → Merchant Token\n\nFormat: A2XXXXXXXXXXX"
+                          );
+                          if (!sellerId || !sellerId.trim()) return;
+
+                          const refreshToken = window.prompt(
+                            "Step 2 of 2\n\nEnter your Amazon Refresh Token\n\nYou received this from your Solution Provider Portal app authorization."
+                          );
+                          if (!refreshToken || !refreshToken.trim()) return;
+
+                          try {
+                            await apiClient("/api/v1/channels/amazon/connect/direct", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                seller_id: sellerId.trim(),
+                                refresh_token: refreshToken.trim(),
+                              }),
+                            });
+                            await loadData();
+                          } catch (err) {
+                            alert(
+                              err instanceof Error
+                                ? `Failed to connect Amazon: ${err.message}`
+                                : "Failed to connect Amazon. Please try again."
+                            );
+                          }
+                        }
                       }}
                       onDisconnect={async () => {
                         const confirmed = window.confirm(
