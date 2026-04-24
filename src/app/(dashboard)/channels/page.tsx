@@ -217,7 +217,7 @@ function ChannelsPageContent() {
   });
 
   const handleSyncNow = async (channel: string) => {
-    if (channel !== "shopify") return;
+    if (!["shopify", "amazon"].includes(channel)) return;
     setSyncing(channel);
     try {
       await triggerSync(channel);
