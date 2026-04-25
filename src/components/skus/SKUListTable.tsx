@@ -35,7 +35,7 @@ function SkuRow({ item }: { item: SkuListItem }) {
         </span>
       </td>
       <td className="py-4 px-6 text-sm font-bold text-slate-600 font-mono">
-        {formatINR(item.net_revenue)}
+        {formatINR(item.total_net_revenue)}
       </td>
       <td className="py-4 px-6 text-sm font-black font-mono">
         <span className={cmPositive ? "text-emerald-600" : "text-red-600"}>

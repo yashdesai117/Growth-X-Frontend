@@ -34,21 +34,21 @@ export default function SKUsPage() {
       setError(null);
 
       try {
-        const data: SkuList = await fetchSkuList({
-          limit: 20,
-          cursor: appendCursor,
-          sort_by: sortBy,
-          sort_dir: sortDir,
-        });
+        const data: SkuList = await fetchSkuList(
+          appendCursor,
+          sortBy,
+          sortDir,
+          20
+        );
 
         if (appendCursor) {
-          setSkus((prev) => [...prev, ...data.items]);
+          setSkus((prev) => [...prev, ...data.skus]);
         } else {
-          setSkus(data.items);
+          setSkus(data.skus);
         }
         setCursor(data.next_cursor);
         setHasMore(data.has_more);
-        setTotalCount(data.total_count);
+        setTotalCount(data.total_skus);
       } catch {
         setError("Failed to load SKUs");
       } finally {
