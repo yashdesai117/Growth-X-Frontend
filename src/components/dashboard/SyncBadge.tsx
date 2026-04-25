@@ -1,6 +1,7 @@
 "use client";
 
 import { formatRelativeTime } from "@/lib/format";
+import { RefreshCw } from "lucide-react";
 
 interface SyncBadgeProps {
   lastSyncedAt: string | null;
@@ -19,23 +20,23 @@ export function SyncBadge({
   const isFailed = status === "failed";
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       {/* Status indicator */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {isRunning ? (
           <>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#EAB308] animate-pulse" />
-            <span className="text-[11px] text-[#EAB308]">Syncing…</span>
+            <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            <span className="text-xs font-bold text-blue-600">Syncing...</span>
           </>
         ) : isFailed ? (
           <>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
-            <span className="text-[11px] text-[#EF4444]">Sync failed</span>
+            <span className="inline-block w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+            <span className="text-xs font-bold text-red-600">Sync failed</span>
           </>
         ) : (
           <>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-            <span className="text-[11px] text-[#555]">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <span className="text-xs font-semibold text-slate-500">
               {lastSyncedAt
                 ? `Synced ${formatRelativeTime(lastSyncedAt)}`
                 : "Never synced"}
@@ -48,14 +49,15 @@ export function SyncBadge({
       <button
         onClick={onSyncNow}
         disabled={isRunning}
-        className={`text-[11px] px-2.5 py-1 rounded-md border transition-all
+        className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all shadow-sm
           ${
             isRunning
-              ? "text-[#333] border-[#222] cursor-not-allowed"
-              : "text-[#888] border-[#2A2A2A] hover:text-white hover:border-[#444] cursor-pointer"
+              ? "text-slate-400 border-neutral-200 bg-neutral-50 cursor-not-allowed"
+              : "text-slate-700 border-neutral-200 bg-white hover:bg-slate-50 hover:text-slate-900 cursor-pointer active:scale-95"
           }`}
       >
-        {isRunning ? "Syncing…" : "Sync Now"}
+        <RefreshCw size={12} className={isRunning ? "animate-spin" : ""} strokeWidth={2.5} />
+        {isRunning ? "Syncing..." : "Sync Now"}
       </button>
     </div>
   );

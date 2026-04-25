@@ -155,98 +155,29 @@ export interface SyncStatus {
 }
 
 // ─── Insights ─────────────────────────────────────────────────────────────────
-// GET /api/v1/insights/summary
 // GET /api/v1/insights/
-// GET /api/v1/insights/recommendations
 // PATCH /api/v1/insights/{insight_id}/dismiss
 
-/** Returned by GET /api/v1/insights/summary — portfolio health banner. */
-export interface InsightSummary {
-  total_active_insights: number;
-  high_count: number;
-  medium_count: number;
-  last_generated_at: string | null;
-  /** "completed" | "skipped" | "failed" | null (no run yet) */
-  ai_status: string | null;
-  /** "insufficient_data" | null — drives empty-state copy */
-  ai_skip_reason: string | null;
-  period_from: string | null;
-  period_to: string | null;
-}
-
-/** Server-computed deep link for the 'View SKU' button on insight cards. */
-export interface SkuDeepLink {
-  route: string;
-  link_type: "platform_sku" | "canonical_sku";
-}
-
-/** Full insight card — returned by GET /api/v1/insights/ */
 export interface InsightItem {
   insight_id: string;
-  /** margin_leak | channel_efficiency | sku_action | strategic_tension | anomaly_alert */
   insight_type: string;
-  severity: "high" | "medium";
-  /** Deterministic — never self-reported by Gemini */
-  confidence: "high" | "medium";
+  severity: "high" | "medium" | "low";
   title: string;
   description: string;
-  /** Narrative logic chain: how the AI reached this conclusion */
-  reason_chain: string | null;
   action_recommendation: string | null;
-  recommendation_impact: {
-    metric: string;
-    direction: "increase" | "decrease";
-    value: number;
-    unit: string;
-    time_to_impact: string;
-  } | null;
   affected_channel: string | null;
-  /** Channel-specific SKU identifier (e.g. Amazon ASIN, Shopify variant ID) */
-  affected_platform_sku_id: string | null;
-  /** Brand's own cross-channel identifier — set only when canonical mapping exists */
-  affected_canonical_sku_code: string | null;
-  /** Which of the 5 domains this insight draws from */
-  source_domains: string[];
-  /** True if this insight surfaced a resolved pre-LLM domain conflict */
-  is_conflict_resolution: boolean;
+  affected_sku_id: string | null;
   is_dismissed: boolean;
   generated_at: string;
-  /** Computed server-side — tells frontend exactly where to route the 'View SKU' button */
-  sku_deep_link: SkuDeepLink | null;
 }
 
 export interface InsightsList {
   items: InsightItem[];
   next_cursor: string | null;
   total_count: number;
-}
-
-/** Slim item for GET /api/v1/insights/recommendations */
-export interface RecommendationItem {
-  insight_id: string;
-  title: string;
-  action_recommendation: string | null;
-  recommendation_impact: {
-    metric: string;
-    direction: "increase" | "decrease";
-    value: number;
-    unit: string;
-    time_to_impact: string;
-  } | null;
-  severity: "high" | "medium";
-  confidence: "high" | "medium";
-  affected_channel: string | null;
-  affected_platform_sku_id: string | null;
-  affected_canonical_sku_code: string | null;
-  is_conflict_resolution: boolean;
-  is_dismissed: boolean;
-  sku_deep_link: SkuDeepLink | null;
-}
-
-export interface RecommendationsList {
-  items: RecommendationItem[];
-  /** Total count for pagination display — NOT a sum of impact values */
-  total_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
 }
 
 // ─── Cost Inputs ──────────────────────────────────────────────────────────────

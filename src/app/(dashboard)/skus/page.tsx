@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { fetchSkuList } from "@/lib/dashboard";
 import { SKUListTable } from "@/components/skus/SKUListTable";
-import type { SkuListItem } from "@/types/api";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import type { SkuList, SkuListItem } from "@/types/api";
 
 type SortBy = "contribution_margin_pct" | "net_revenue" | "return_rate_pct" | "units_sold";
 type SortDir = "asc" | "desc";
@@ -28,22 +29,28 @@ export default function SKUsPage() {
 
   const load = useCallback(
     async (appendCursor?: string) => {
-      const isAppend = !!appendCursor;
-      if (isAppend) setIsLoadingMore(true);
+      if (appendCursor) setIsLoadingMore(true);
       else setIsLoading(true);
+      setError(null);
 
       try {
-        const data = await fetchSkuList(appendCursor, sortBy, sortDir, 20);
-        if (isAppend) {
-          setSkus((prev) => [...prev, ...data.skus]);
+        const data: SkuList = await fetchSkuList({
+          limit: 20,
+          cursor: appendCursor,
+          sort_by: sortBy,
+          sort_dir: sortDir,
+        });
+
+        if (appendCursor) {
+          setSkus((prev) => [...prev, ...data.items]);
         } else {
-          setSkus(data.skus);
+          setSkus(data.items);
         }
         setCursor(data.next_cursor);
         setHasMore(data.has_more);
-        setTotalCount(data.total_skus);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load SKUs");
+        setTotalCount(data.total_count);
+      } catch {
+        setError("Failed to load SKUs");
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
@@ -52,93 +59,82 @@ export default function SKUsPage() {
     [sortBy, sortDir]
   );
 
-  // Re-fetch from start on sort change
+  // Initial load or sort change
   useEffect(() => {
-    setSkus([]);
-    setCursor(null);
-    setHasMore(false);
     load();
   }, [load]);
 
-  const handleSortBy = (value: SortBy) => {
-    if (value === sortBy) return;
-    setSortBy(value);
-  };
-
-  const handleSortDir = (value: SortDir) => {
-    if (value === sortDir) return;
-    setSortDir(value);
-  };
-
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* ── Sticky Topbar with sort controls ── */}
-      <div className="sticky top-0 bg-[#0A0A0A] z-10 border-b border-[#1A1A1A]">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-sm font-medium text-white">SKUs</h1>
-            {!isLoading && totalCount > 0 && (
-              <p className="text-[10px] text-[#444] mt-0.5">
-                {totalCount.toLocaleString("en-IN")} SKUs total
-              </p>
-            )}
-          </div>
+    <div className="flex flex-col min-h-screen pb-12">
+      {/* Topbar */}
+      <div className="px-8 py-6 border-b border-neutral-200/60 sticky top-0 bg-white/80 backdrop-blur-md z-10 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">SKU Performance</h1>
+          {!isLoading && totalCount > 0 && (
+            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+              {totalCount} SKUs
+            </span>
+          )}
+        </div>
 
-          {/* Sort controls */}
-          <div className="flex items-center gap-3">
-            {/* Sort by */}
-            <div className="flex items-center gap-1 bg-[#111] border border-[#1E1E1E] rounded-lg p-0.5">
-              {SORT_OPTIONS.map((opt) => (
+        {/* Filters / Sorts */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Sort By */}
+          <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-neutral-200/60">
+            {SORT_OPTIONS.map((opt) => {
+              const isActive = sortBy === opt.value;
+              return (
                 <button
                   key={opt.value}
-                  onClick={() => handleSortBy(opt.value)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all cursor-pointer
-                    ${sortBy === opt.value
-                      ? "bg-[#1E1E1E] text-white"
-                      : "text-[#555] hover:text-[#888]"
+                  onClick={() => setSortBy(opt.value)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer
+                    ${
+                      isActive
+                        ? "bg-white text-slate-900 shadow-sm border border-neutral-200/50"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                     }`}
                 >
                   {opt.label}
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            {/* Asc / Desc */}
-            <div className="flex items-center gap-1 bg-[#111] border border-[#1E1E1E] rounded-lg p-0.5">
-              {(["asc", "desc"] as SortDir[]).map((ord) => (
-                <button
-                  key={ord}
-                  onClick={() => handleSortDir(ord)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all cursor-pointer
-                    ${sortDir === ord
-                      ? "bg-[#1E1E1E] text-white"
-                      : "text-[#555] hover:text-[#888]"
-                    }`}
-                >
-                  {ord === "asc" ? "↑ Ascending" : "↓ Descending"}
-                </button>
-              ))}
-            </div>
+          {/* Direction toggle */}
+          <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-neutral-200/60">
+            {(["asc", "desc"] as SortDir[]).map((ord) => (
+              <button
+                key={ord}
+                onClick={() => setSortDir(ord)}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer
+                  ${
+                    sortDir === ord
+                      ? "bg-white text-slate-900 shadow-sm border border-neutral-200/50"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                  }`}
+              >
+                {ord === "asc" ? <ArrowUp size={14}/> : <ArrowDown size={14}/>}
+                {ord === "asc" ? "Ascending" : "Descending"}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── Content ── */}
-      <div className="p-6 max-w-[1280px]">
+      {/* Content */}
+      <div className="p-8 max-w-[1280px] mx-auto w-full">
         {error && (
-          <div className="mb-4 px-4 py-3 bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-lg">
-            <p className="text-[11px] text-[#EF4444]">{error}</p>
+          <div className="mb-6 px-5 py-4 bg-red-50 border border-red-200/60 rounded-xl shadow-sm text-sm font-medium text-red-800">
+            {error}
           </div>
         )}
 
-        <div className="bg-[#111] border border-[#1E1E1E] rounded-xl overflow-hidden">
-          <SKUListTable
-            items={skus}
-            onLoadMore={() => cursor && load(cursor)}
-            hasMore={hasMore}
-            isLoading={isLoading || isLoadingMore}
-          />
-        </div>
+        <SKUListTable
+          items={skus}
+          onLoadMore={() => cursor && load(cursor)}
+          hasMore={hasMore}
+          isLoading={isLoading || isLoadingMore}
+        />
       </div>
     </div>
   );

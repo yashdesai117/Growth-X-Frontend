@@ -3,28 +3,21 @@
  *
  * Layout for auth pages (login + register).
  * Loads Google Fonts via Next.js font optimization.
- * No sidebar — auth pages are standalone.
+ * No sidebar - auth pages are standalone.
  */
 
 import type { Metadata } from "next";
-import { DM_Sans, DM_Serif_Display } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { InfiniteGridBackground } from "@/components/ui/infinite-grid";
 
-const dmSans = DM_Sans({
+const font = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
-
-const dmSerifDisplay = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-dm-serif",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "GrowthX AI",
-  description: "Contribution margin intelligence for D2C brands.",
+  title: "GrowthX AI | Auth",
+  description: "Sign in to GrowthX AI",
 };
 
 export default function AuthLayout({
@@ -34,9 +27,11 @@ export default function AuthLayout({
 }) {
   return (
     <div
-      className={`${dmSans.variable} ${dmSerifDisplay.variable} bg-[#0A0A0A] min-h-screen font-sans`}
+      className={`${font.className} bg-[#fafafa] min-h-screen text-slate-900 selection:bg-emerald-100 flex flex-col`}
     >
-      {children}
+      <InfiniteGridBackground className="flex-1 flex flex-col items-center justify-center p-4">
+        {children}
+      </InfiniteGridBackground>
     </div>
   );
 }

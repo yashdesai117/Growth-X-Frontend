@@ -2,6 +2,7 @@
 
 import type { SkuSummary } from "@/types/api";
 import { formatINR, formatPct, truncate } from "@/lib/format";
+import { AlertCircle } from "lucide-react";
 
 interface SKUTableProps {
   topSkus: SkuSummary[];
@@ -13,30 +14,30 @@ function SkuRow({ sku }: { sku: SkuSummary }) {
   const cmPositive = cmPct !== null && cmPct >= 0;
 
   return (
-    <tr className="border-b border-[#161616] hover:bg-[#141414] transition-colors">
-      <td className="py-2.5 px-3 text-[12px] text-[#CCC]">
-        {truncate(sku.product_name, 32)}
+    <tr className="border-b border-neutral-100 hover:bg-slate-50/80 transition-colors">
+      <td className="py-3 px-6 text-sm font-semibold text-slate-800">
+        {truncate(sku.product_name, 40)}
       </td>
-      <td className="py-2.5 px-3">
-        <span className="text-[10px] text-[#555] uppercase tracking-wide">
+      <td className="py-3 px-6">
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-1 rounded-md">
           {sku.channel}
         </span>
       </td>
-      <td className="py-2.5 px-3 text-[12px] text-[#888] font-mono">
+      <td className="py-3 px-6 text-sm font-bold text-slate-600 font-mono">
         {formatINR(sku.total_net_revenue)}
       </td>
-      <td className="py-2.5 px-3 text-[12px] font-semibold font-mono">
-        <span className={cmPositive ? "text-[#22C55E]" : "text-[#EF4444]"}>
+      <td className="py-3 px-6 text-sm font-black font-mono">
+        <span className={cmPositive ? "text-emerald-600" : "text-red-600"}>
           {formatPct(cmPct)}
         </span>
       </td>
-      <td className="py-2.5 px-3 text-[12px] text-[#888] font-mono">
+      <td className="py-3 px-6 text-sm font-bold text-slate-500 font-mono">
         {formatPct(sku.return_rate_pct)}
       </td>
-      <td className="py-2.5 px-3">
+      <td className="py-3 px-6">
         {sku.has_missing_data && (
-          <span className="inline-block px-1.5 py-0.5 bg-[#EAB308]/10 text-[#EAB308] text-[9px] rounded-sm font-medium uppercase tracking-wide">
-            data missing
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-[10px] rounded-md font-bold uppercase tracking-wider border border-amber-100">
+            <AlertCircle size={10} /> missing cost
           </span>
         )}
       </td>
@@ -54,7 +55,7 @@ function SKUSection({
   if (!skus.length) return null;
   return (
     <div>
-      <p className="text-[10px] text-[#444] uppercase tracking-widest font-medium px-3 py-2 border-b border-[#161616]">
+      <p className="text-xs text-slate-400 uppercase tracking-widest font-bold px-6 py-3 border-b border-neutral-100 bg-white">
         {title}
       </p>
       <table className="w-full">
@@ -71,23 +72,23 @@ function SKUSection({
 export function SKUTable({ topSkus, bottomSkus }: SKUTableProps) {
   if (!topSkus.length && !bottomSkus.length) {
     return (
-      <div className="py-8 text-center text-[#333] text-xs">
+      <div className="py-12 text-center text-slate-400 font-semibold text-sm">
         No SKU data available
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto w-full">
       {/* Column headers */}
       <table className="w-full">
         <thead>
-          <tr className="border-b border-[#1A1A1A]">
+          <tr className="border-b border-neutral-200/80 bg-slate-50">
             {["Product", "Channel", "Revenue", "CM%", "Return Rate", "Flags"].map(
               (h) => (
                 <th
                   key={h}
-                  className="text-[10px] text-[#444] uppercase tracking-widest font-medium text-left py-2 px-3"
+                  className="text-[11px] text-slate-500 uppercase tracking-widest font-extrabold text-left py-3 px-6"
                 >
                   {h}
                 </th>

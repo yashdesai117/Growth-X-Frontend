@@ -16,6 +16,7 @@ import { SKUTable } from "@/components/dashboard/SKUTable";
 import { SyncBadge } from "@/components/dashboard/SyncBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatINR, formatPct } from "@/lib/format";
+import { AlertTriangle } from "lucide-react";
 import type {
   DashboardSummary,
   ChannelsList,
@@ -25,39 +26,35 @@ import type {
   SyncStatus,
 } from "@/types/api";
 
-// ─── Channel connection status row (no revenue — not in /channels endpoint) ───
-
 function ChannelRow({ ch }: { ch: ChannelStatus }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-[#161616] last:border-0">
-      <div className="flex items-center gap-2 min-w-0">
+    <div className="flex items-center justify-between py-3 border-b border-neutral-100 last:border-0">
+      <div className="flex items-center gap-3 min-w-0">
         <span
-          className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
-            ch.is_connected ? "bg-[#22C55E]" : "bg-[#333]"
+          className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+            ch.is_connected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
           }`}
         />
-        <span className="text-[12px] text-[#AAA] capitalize truncate">
+        <span className="text-sm font-semibold text-slate-700 capitalize truncate">
           {ch.channel}
         </span>
       </div>
-      <div className="flex items-center gap-3 shrink-0 ml-3">
+      <div className="flex items-center gap-4 shrink-0 ml-3">
         {ch.is_connected ? (
-          <span className="text-[10px] text-[#22C55E] font-medium">Connected</span>
+          <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-md">Connected</span>
         ) : (
-          <span className="text-[10px] text-[#444]">Not connected</span>
+          <span className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded-md">Not connected</span>
         )}
         {ch.sync_status === "running" && (
-          <span className="text-[9px] text-[#3B82F6] uppercase tracking-wide">syncing…</span>
+          <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider animate-pulse">syncing...</span>
         )}
-        <span className="text-[10px] text-[#333] tabular-nums">
-          {ch.records_in_db > 0 ? `${ch.records_in_db.toLocaleString("en-IN")} rows` : "—"}
+        <span className="text-xs text-slate-500 font-medium tabular-nums w-20 text-right">
+          {ch.records_in_db > 0 ? `${ch.records_in_db.toLocaleString("en-IN")} rows` : "-"}
         </span>
       </div>
     </div>
   );
 }
-
-// ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function OverviewPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -111,31 +108,27 @@ export default function OverviewPage() {
   };
 
   const lastJob = syncStatus?.sync_jobs?.[0] ?? null;
-  // Backend returns flat fields — no nested current_period or deltas
   const hasWarning = (summary?.skus_with_missing_data ?? 0) > 0;
 
-  // ── Error state ──
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-2">
-          <p className="text-[#EF4444] text-sm font-medium">
-            Failed to load dashboard
-          </p>
-          <p className="text-[#444] text-xs">{error}</p>
-          <p className="text-[#333] text-xs">
-            Ensure the backend is running on port 8000
-          </p>
+        <div className="text-center space-y-3 bg-white border border-red-100 p-8 rounded-2xl shadow-sm">
+          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+            <AlertTriangle size={24} />
+          </div>
+          <p className="text-red-600 text-lg font-bold">Failed to load dashboard</p>
+          <p className="text-slate-500 text-sm">{error}</p>
+          <p className="text-slate-400 text-xs">Ensure the backend is running on port 8000</p>
           <button
             onClick={() => {
               setError(null);
               setIsLoading(true);
               loadAll();
             }}
-            className="mt-3 text-[11px] px-4 py-1.5 border border-[#2A2A2A] text-[#666]
-              rounded-lg hover:text-white hover:border-[#444] transition-all cursor-pointer"
+            className="mt-4 text-sm font-semibold px-6 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
           >
-            Retry
+            Retry Connection
           </button>
         </div>
       </div>
@@ -143,13 +136,13 @@ export default function OverviewPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* ── Sticky topbar ── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A] sticky top-0 bg-[#0A0A0A] z-10">
+    <div className="flex flex-col min-h-screen pb-12">
+      {/* Sticky topbar */}
+      <div className="flex items-center justify-between px-8 py-5 border-b border-neutral-200/60 sticky top-0 bg-white/80 backdrop-blur-md z-10 shadow-sm">
         <div>
-          <h1 className="text-sm font-medium text-white">Dashboard Overview</h1>
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard Overview</h1>
           {summary && !isLoading && (
-            <p className="text-[10px] text-[#444] mt-0.5">
+            <p className="text-xs font-semibold text-slate-500 mt-1">
               {summary.date_from} — {summary.date_to}
             </p>
           )}
@@ -162,16 +155,16 @@ export default function OverviewPage() {
         />
       </div>
 
-      <div className="p-6 space-y-5 max-w-[1280px]">
-        {/* ── Missing overall costs warning banner ── */}
+      <div className="p-8 space-y-6 max-w-[1400px] mx-auto w-full">
+        {/* Missing overall costs warning banner */}
         {!hasActiveCosts && !isLoading && (
-          <div className="flex items-start gap-2.5 px-4 py-3 bg-[#EAB308]/5 border border-[#EAB308]/20 rounded-lg">
-            <span className="text-[#EAB308] text-sm mt-0.5 shrink-0">⚠</span>
-            <p className="text-[11px] text-[#EAB308] leading-relaxed">
+          <div className="flex items-start gap-3 px-5 py-4 bg-amber-50 border border-amber-200/60 rounded-xl shadow-sm">
+            <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+            <p className="text-sm font-medium text-amber-800 leading-relaxed">
               No cost inputs have been configured. Contribution margins cannot be calculated accurately.{" "}
               <a
                 href="/channels"
-                className="underline underline-offset-2 hover:text-[#FBBF24] transition-colors"
+                className="underline underline-offset-4 font-bold hover:text-amber-900 transition-colors"
               >
                 Configure costs on the Channels page.
               </a>
@@ -179,15 +172,15 @@ export default function OverviewPage() {
           </div>
         )}
 
-        {/* ── Missing data warning banner ── */}
+        {/* Missing data warning banner */}
         {hasWarning && !isLoading && (
-          <div className="flex items-start gap-2.5 px-4 py-3 bg-[#EAB308]/5 border border-[#EAB308]/20 rounded-lg">
-            <span className="text-[#EAB308] text-sm mt-0.5 shrink-0">⚠</span>
-            <p className="text-[11px] text-[#EAB308] leading-relaxed">
+          <div className="flex items-start gap-3 px-5 py-4 bg-amber-50 border border-amber-200/60 rounded-xl shadow-sm">
+            <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+            <p className="text-sm font-medium text-amber-800 leading-relaxed">
               {summary?.skus_with_missing_data} SKU(s) have missing cost inputs — margins may be overstated.{" "}
               <a
                 href="/channels"
-                className="underline underline-offset-2 hover:text-[#FBBF24] transition-colors"
+                className="underline underline-offset-4 font-bold hover:text-amber-900 transition-colors"
               >
                 Add costs on the Channels page.
               </a>
@@ -195,17 +188,17 @@ export default function OverviewPage() {
           </div>
         )}
 
-        {/* ── 4 KPI MetricCards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* 4 KPI MetricCards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-[#111] border border-[#1E1E1E] rounded-xl p-4 space-y-2.5"
+                className="bg-white border border-neutral-200/60 rounded-2xl p-6 space-y-4 shadow-sm"
               >
-                <Skeleton className="h-2.5 w-20 bg-[#1A1A1A]" />
-                <Skeleton className="h-7 w-28 bg-[#1A1A1A]" />
-                <Skeleton className="h-2.5 w-16 bg-[#1A1A1A]" />
+                <Skeleton className="h-3 w-24 bg-neutral-100" />
+                <Skeleton className="h-10 w-32 bg-neutral-100" />
+                <Skeleton className="h-3 w-16 bg-neutral-100" />
               </div>
             ))
           ) : (
@@ -230,7 +223,7 @@ export default function OverviewPage() {
                 value={formatPct(summary?.return_rate_pct)}
                 subtitle={
                   summary
-                    ? `${summary.total_units_returned.toLocaleString("en-IN")} returned`
+                    ? `${summary.total_units_returned.toLocaleString("en-IN")} units returned`
                     : undefined
                 }
                 warning={hasWarning}
@@ -239,82 +232,90 @@ export default function OverviewPage() {
           )}
         </div>
 
-        {/* ── MarginChart (60%) + Channel Status (40%) ── */}
-        <div className="grid grid-cols-5 gap-4">
-          {/* Trend chart — 3 cols */}
-          <div className="col-span-3 bg-[#111] border border-[#1E1E1E] rounded-xl p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[11px] text-[#555] uppercase tracking-widest font-medium">
+        {/* MarginChart (60%) + Channel Status (40%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Trend chart - 3 cols */}
+          <div className="col-span-1 lg:col-span-3 bg-white border border-neutral-200/60 rounded-2xl p-6 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-sm text-slate-500 uppercase tracking-widest font-bold">
                 Margin Trend
               </h2>
               {trend && !isLoading && (
-                <span className="text-[10px] text-[#333]">
-                  {trend.date_from} – {trend.date_to}
+                <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-md border border-neutral-100">
+                  {trend.date_from} — {trend.date_to}
                 </span>
               )}
             </div>
             {isLoading ? (
-              <Skeleton className="h-40 w-full bg-[#0D0D0D] rounded-lg" />
+              <Skeleton className="flex-1 min-h-[250px] w-full bg-neutral-50 rounded-xl" />
             ) : (
-              <MarginChart series={trend?.series ?? []} />
+              <div className="flex-1 min-h-[250px]">
+                <MarginChart series={trend?.series ?? []} />
+              </div>
             )}
           </div>
 
-          {/* Channel status — 2 cols */}
-          <div className="col-span-2 bg-[#111] border border-[#1E1E1E] rounded-xl p-4">
-            <h2 className="text-[11px] text-[#555] uppercase tracking-widest font-medium mb-3">
-              Channels
+          {/* Channel status - 2 cols */}
+          <div className="col-span-1 lg:col-span-2 bg-white border border-neutral-200/60 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-sm text-slate-500 uppercase tracking-widest font-bold mb-5">
+              Connected Channels
             </h2>
             {isLoading ? (
-              <div className="space-y-3 mt-2">
+              <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton
                     key={i}
-                    className="h-8 w-full bg-[#0D0D0D] rounded"
+                    className="h-12 w-full bg-neutral-50 rounded-lg"
                   />
                 ))}
               </div>
             ) : channels?.channels.length ? (
-              <div>
+              <div className="space-y-1">
                 {channels.channels.map((ch) => (
                   <ChannelRow key={ch.channel} ch={ch} />
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center text-[#333] text-xs">
-                No channels connected
+              <div className="py-12 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                  <span className="text-slate-400 font-bold">!</span>
+                </div>
+                <p className="text-slate-900 font-bold text-sm">No channels connected</p>
+                <p className="text-slate-500 text-xs mt-1">Connect Shopify to see data.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* ── SKUTable ── */}
-        <div className="bg-[#111] border border-[#1E1E1E] rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#1A1A1A] flex items-center justify-between">
-            <h2 className="text-[11px] text-[#555] uppercase tracking-widest font-medium">
-              SKU Performance
+        {/* SKUTable */}
+        <div className="bg-white border border-neutral-200/60 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-neutral-100 flex items-center justify-between bg-slate-50/50">
+            <h2 className="text-sm text-slate-500 uppercase tracking-widest font-bold">
+              Top & Bottom SKU Performance
             </h2>
             <a
               href="/skus"
-              className="text-[11px] text-[#444] hover:text-[#888] transition-colors"
+              className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
             >
-              View all →
+              View complete list →
             </a>
           </div>
           {isLoading ? (
-            <div className="p-4 space-y-2.5">
+            <div className="p-6 space-y-4 bg-white">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton
                   key={i}
-                  className="h-8 w-full bg-[#0D0D0D] rounded"
+                  className="h-10 w-full bg-neutral-50 rounded-lg"
                 />
               ))}
             </div>
           ) : (
-            <SKUTable
-              topSkus={topSkus?.top_skus ?? []}
-              bottomSkus={topSkus?.bottom_skus ?? []}
-            />
+            <div className="bg-white">
+              <SKUTable
+                topSkus={topSkus?.top_skus ?? []}
+                bottomSkus={topSkus?.bottom_skus ?? []}
+              />
+            </div>
           )}
         </div>
       </div>

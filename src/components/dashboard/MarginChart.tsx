@@ -28,12 +28,13 @@ function CustomTooltip({
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-[#161616] border border-[#2A2A2A] rounded-lg px-3 py-2 text-[11px]">
-      <p className="text-[#555] mb-1">{d.date}</p>
-      <p className="text-[#22C55E] font-semibold">
-        CM%: {d.contribution_margin_pct != null ? d.contribution_margin_pct.toFixed(1) : "—"}%
+    <div className="bg-white border border-neutral-200/80 rounded-xl px-4 py-3 shadow-lg">
+      <p className="text-slate-500 text-xs font-semibold mb-1.5">{d.date}</p>
+      <p className="text-emerald-600 font-bold text-sm flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+        Margin: {d.contribution_margin_pct != null ? d.contribution_margin_pct.toFixed(1) : "-"}%
       </p>
-      <p className="text-[#888]">
+      <p className="text-slate-600 text-xs font-semibold mt-1 pl-4">
         ₹{(d.net_revenue / 1000).toFixed(1)}K revenue
       </p>
     </div>
@@ -50,39 +51,39 @@ function formatXAxis(date: string, index: number, all: TrendPoint[]) {
 export function MarginChart({ series }: MarginChartProps) {
   if (!series.length) {
     return (
-      <div className="h-40 flex items-center justify-center text-[#333] text-xs">
+      <div className="h-full flex items-center justify-center text-slate-400 font-semibold text-xs bg-slate-50 rounded-xl border border-dashed border-neutral-200">
         No trend data available
       </div>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={160}>
-      <LineChart data={series} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={series} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <XAxis
           dataKey="date"
           tickFormatter={(val: string, i: number) =>
             formatXAxis(val, i, series)
           }
-          tick={{ fill: "#444", fontSize: 10 }}
+          tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           dataKey="contribution_margin_pct"
-          tick={{ fill: "#444", fontSize: 10 }}
+          tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v: number) => `${v.toFixed(0)}%`}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e2e8f0', strokeWidth: 2, strokeDasharray: '4 4' }} />
         <Line
           type="monotone"
           dataKey="contribution_margin_pct"
-          stroke="#22C55E"
-          strokeWidth={1.5}
+          stroke="#10b981"
+          strokeWidth={3}
           dot={false}
-          activeDot={{ r: 3, fill: "#22C55E", strokeWidth: 0 }}
+          activeDot={{ r: 5, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
         />
       </LineChart>
     </ResponsiveContainer>

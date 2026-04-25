@@ -1,26 +1,25 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { fetchInsightsSummary, fetchInsights, dismissInsight } from "@/lib/dashboard";
+import { fetchInsights, dismissInsight } from "@/lib/dashboard";
 import { InsightCard } from "@/components/insights/InsightCard";
-import type { InsightSummary, InsightsList, InsightItem } from "@/types/api";
+import type { InsightsList, InsightItem } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatRelativeTime } from "@/lib/format";
+import { Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-// Domain 5 eliminated "low" severity — tabs only show high / medium / all / dismissed
-type TabValue = "all" | "high" | "medium" | "dismissed";
+type TabValue = "all" | "high" | "medium" | "low" | "dismissed";
 
 const TABS: { value: TabValue; label: string }[] = [
   { value: "all", label: "All" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
   { value: "dismissed", label: "Dismissed" },
 ];
 
-const SEVERITY_ORDER = { high: 0, medium: 1 } as const;
+const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
 
 export default function InsightsPage() {
-  const [summary, setSummary] = useState<InsightSummary | null>(null);
   const [insights, setInsights] = useState<InsightsList | null>(null);
   const [dismissed, setDismissed] = useState<InsightItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
@@ -30,16 +29,8 @@ export default function InsightsPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Three parallel calls — exactly as specified in Domain 7 Section 6
-      const [summaryData, activeData, dismissedData] = await Promise.all([
-        fetchInsightsSummary(),
-        fetchInsights({ is_dismissed: false }),
-        fetchInsights({ is_dismissed: true }),
-      ]);
-      setSummary(summaryData);
-      setInsights(activeData);
-      const activeIds = new Set(activeData.items.map((i) => i.insight_id));
-      setDismissed(dismissedData.items.filter((i) => !activeIds.has(i.insight_id)));
+      const data = await fetchInsights();
+      setInsights(data);
     } catch {
       setError("Failed to load insights");
     } finally {
@@ -53,34 +44,32 @@ export default function InsightsPage() {
   const handleDismiss = async (id: string) => {
     if (!insights) return;
     const dismissedItem = insights.items.find((i) => i.insight_id === id);
+    // Remove from active list immediately
     setInsights((prev) => {
       if (!prev) return prev;
+      const updated = prev.items.filter((i) => i.insight_id !== id);
+      const removedSeverity = dismissedItem?.severity;
       return {
         ...prev,
-        items: prev.items.filter((i) => i.insight_id !== id),
+        items: updated,
         total_count: prev.total_count - 1,
+        high_count: removedSeverity === "high" ? prev.high_count - 1 : prev.high_count,
+        medium_count: removedSeverity === "medium" ? prev.medium_count - 1 : prev.medium_count,
+        low_count: removedSeverity === "low" ? prev.low_count - 1 : prev.low_count,
       };
     });
-    // Update summary counts optimistically
     if (dismissedItem) {
-      setSummary((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          total_active_insights: prev.total_active_insights - 1,
-          high_count: dismissedItem.severity === "high" ? prev.high_count - 1 : prev.high_count,
-          medium_count: dismissedItem.severity === "medium" ? prev.medium_count - 1 : prev.medium_count,
-        };
-      });
       setDismissed((prev) => [...prev, { ...dismissedItem, is_dismissed: true }]);
     }
     try {
       await dismissInsight(id);
     } catch {
-      load(); // Rollback on failure
+      // Rollback on failure
+      load();
     }
   };
 
+  // Client-side filter
   const visibleItems: InsightItem[] = (() => {
     if (activeTab === "dismissed") return dismissed;
     if (!insights) return [];
@@ -89,65 +78,47 @@ export default function InsightsPage() {
         ? insights.items
         : insights.items.filter((i) => i.severity === activeTab);
     return [...filtered].sort(
-      (a, b) =>
-        (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99)
+      (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
     );
   })();
 
   const counts = {
-    high: summary?.high_count ?? 0,
-    medium: summary?.medium_count ?? 0,
-    all: summary?.total_active_insights ?? 0,
+    high: insights?.high_count ?? 0,
+    medium: insights?.medium_count ?? 0,
+    low: insights?.low_count ?? 0,
+    all: insights?.total_count ?? 0,
     dismissed: dismissed.length,
   };
 
-  // Empty state copy driven by ai_skip_reason (as specified)
-  const emptyStateCopy = (() => {
-    if (activeTab === "dismissed") return { title: "No dismissed insights", sub: "" };
-    if (activeTab !== "all") return { title: `No ${activeTab} severity insights`, sub: "Change the filter or wait for the next computation run." };
-    if (summary?.ai_status === "skipped" && summary?.ai_skip_reason === "insufficient_data") {
-      return {
-        title: "Connect more channels to unlock insights",
-        sub: "GrowthX AI needs data from at least one connected channel to generate insights.",
-      };
-    }
-    return {
-      title: "No insights yet",
-      sub: "Insights are generated automatically after each sync. Check back soon.",
-    };
-  })();
-
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* ── Sticky Topbar ── */}
-      <div className="sticky top-0 bg-[#0A0A0A] z-10 border-b border-[#1A1A1A]">
-        <div className="flex items-center justify-between px-6 py-4">
-          <h1 className="text-sm font-medium text-white">Insights</h1>
+    <div className="flex flex-col min-h-screen pb-12">
+      {/* Sticky Topbar */}
+      <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10 border-b border-neutral-200/60 shadow-sm">
+        <div className="flex items-center justify-between px-8 py-5">
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            AI Insights <Sparkles size={18} className="text-emerald-500" />
+          </h1>
 
-          {/* Portfolio health banner — from summary call */}
-          {!isLoading && summary && (
+          {/* Severity count badges */}
+          {!isLoading && insights && (
             <div className="flex items-center gap-3">
-              {summary.high_count > 0 && (
-                <span className="text-[10px] px-2 py-1 bg-[#EF4444]/10 text-[#EF4444] rounded border border-[#EF4444]/20 font-medium tabular-nums">
-                  {summary.high_count} high
+              {counts.high > 0 && (
+                <span className="text-xs px-2.5 py-1 bg-red-50 text-red-600 rounded-md border border-red-200 font-bold shadow-sm flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                  {counts.high} High
                 </span>
               )}
-              {summary.medium_count > 0 && (
-                <span className="text-[10px] px-2 py-1 bg-[#EAB308]/10 text-[#EAB308] rounded border border-[#EAB308]/20 font-medium tabular-nums">
-                  {summary.medium_count} medium
-                </span>
-              )}
-              {summary.last_generated_at && (
-                <span className="text-[10px] text-[#333]">
-                  Updated {formatRelativeTime(summary.last_generated_at)}
+              {counts.medium > 0 && (
+                <span className="text-xs px-2.5 py-1 bg-amber-50 text-amber-600 rounded-md border border-amber-200 font-bold shadow-sm">
+                  {counts.medium} Medium
                 </span>
               )}
             </div>
           )}
         </div>
 
-        {/* ── Tabs ── */}
-        <div className="flex items-center gap-0 px-6 border-t border-[#111]">
+        {/* Tabs */}
+        <div className="flex items-center gap-2 px-8 pt-2 pb-0">
           {TABS.map((tab) => {
             const count = counts[tab.value];
             const isActive = activeTab === tab.value;
@@ -155,17 +126,17 @@ export default function InsightsPage() {
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-medium transition-colors relative cursor-pointer
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-bold transition-all relative cursor-pointer border-b-2 
                   ${isActive
-                    ? "text-white border-b-2 border-[#22C55E] -mb-px"
-                    : "text-[#444] hover:text-[#777] border-b-2 border-transparent -mb-px"
+                    ? "text-emerald-600 border-emerald-500"
+                    : "text-slate-500 hover:text-slate-900 border-transparent hover:border-slate-200"
                   }`}
               >
                 {tab.label}
                 {count > 0 && (
                   <span
-                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold tabular-nums
-                      ${isActive ? "bg-[#22C55E]/15 text-[#22C55E]" : "bg-[#1A1A1A] text-[#444]"}`}
+                    className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold
+                      ${isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
                   >
                     {count}
                   </span>
@@ -176,29 +147,30 @@ export default function InsightsPage() {
         </div>
       </div>
 
-      {/* ── Content ── */}
-      <div className="p-6 max-w-[800px] space-y-3">
+      {/* Content */}
+      <div className="p-8 max-w-[1000px] mx-auto w-full space-y-4">
         {error && (
-          <div className="px-4 py-3 bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-lg">
-            <p className="text-[11px] text-[#EF4444]">{error}</p>
+          <div className="flex items-start gap-3 px-5 py-4 bg-red-50 border border-red-200/60 rounded-xl shadow-sm">
+            <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={18} />
+            <p className="text-sm font-medium text-red-800">{error}</p>
           </div>
         )}
 
         {/* Skeleton */}
         {isLoading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-[#111] border border-[#1E1E1E] rounded-xl p-4 space-y-3"
+                className="bg-white border border-neutral-200/60 rounded-2xl p-6 space-y-4 shadow-sm"
               >
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-12 bg-[#1A1A1A] rounded" />
-                  <Skeleton className="h-4 w-20 bg-[#1A1A1A] rounded" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-6 w-16 bg-neutral-100 rounded-md" />
+                  <Skeleton className="h-6 w-24 bg-neutral-100 rounded-md" />
                 </div>
-                <Skeleton className="h-4 w-3/4 bg-[#1A1A1A] rounded" />
-                <Skeleton className="h-3 w-full bg-[#1A1A1A] rounded" />
-                <Skeleton className="h-3 w-5/6 bg-[#1A1A1A] rounded" />
+                <Skeleton className="h-5 w-3/4 bg-neutral-100 rounded" />
+                <Skeleton className="h-4 w-full bg-neutral-50 rounded" />
+                <Skeleton className="h-4 w-5/6 bg-neutral-50 rounded" />
               </div>
             ))}
           </div>
@@ -206,17 +178,23 @@ export default function InsightsPage() {
 
         {/* Empty state */}
         {!isLoading && visibleItems.length === 0 && (
-          <div className="py-20 flex flex-col items-center gap-3 text-center">
-            <div className="w-10 h-10 rounded-full bg-[#111] border border-[#1E1E1E] flex items-center justify-center text-[#333] text-lg">
-              {activeTab === "dismissed" ? "✓" : "·"}
+          <div className="py-24 flex flex-col items-center gap-4 text-center bg-white border border-neutral-200/60 rounded-3xl shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-slate-50 border border-neutral-100 flex items-center justify-center text-emerald-500">
+              {activeTab === "dismissed" ? <CheckCircle2 size={32} className="text-slate-300" /> : <Sparkles size={32} />}
             </div>
             <div>
-              <p className="text-[#555] text-sm font-medium">{emptyStateCopy.title}</p>
-              {emptyStateCopy.sub && (
-                <p className="text-[#333] text-xs mt-1 leading-relaxed max-w-[260px]">
-                  {emptyStateCopy.sub}
-                </p>
-              )}
+              <p className="text-slate-900 text-xl font-bold tracking-tight mb-2">
+                {activeTab === "dismissed"
+                  ? "No dismissed insights"
+                  : activeTab === "all"
+                  ? "You're all caught up!"
+                  : `No ${activeTab} severity insights`}
+              </p>
+              <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto leading-relaxed">
+                {activeTab === "all" || activeTab === "dismissed"
+                  ? "Insights are generated automatically after each data sync. Check back soon for new recommendations."
+                  : "Change the filter or wait for the next computation run."}
+              </p>
             </div>
           </div>
         )}
@@ -225,17 +203,19 @@ export default function InsightsPage() {
         {!isLoading && visibleItems.length > 0 && (
           <>
             {activeTab === "dismissed" && (
-              <p className="text-[10px] text-[#333] uppercase tracking-widest pb-1">
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest pb-2 px-2">
                 Dismissed — {dismissed.length} item{dismissed.length !== 1 ? "s" : ""}
               </p>
             )}
-            {visibleItems.map((insight) => (
-              <InsightCard
-                key={insight.insight_id}
-                insight={insight}
-                onDismiss={activeTab === "dismissed" ? () => {} : handleDismiss}
-              />
-            ))}
+            <div className="space-y-5">
+              {visibleItems.map((insight) => (
+                <InsightCard
+                  key={insight.insight_id}
+                  insight={insight}
+                  onDismiss={activeTab === "dismissed" ? () => {} : handleDismiss}
+                />
+              ))}
+            </div>
           </>
         )}
       </div>

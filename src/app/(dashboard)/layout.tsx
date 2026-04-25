@@ -1,7 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
-import { DM_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
-const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
+const font = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export default function DashboardLayout({
   children,
@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div
-      className={`${dmSans.variable} font-sans flex min-h-screen bg-[#0A0A0A] text-white`}
+      className={`${font.className} font-sans flex min-h-screen bg-[#fafafa] text-slate-900`}
     >
       <Sidebar />
       <main className="flex-1 overflow-y-auto min-w-0">{children}</main>

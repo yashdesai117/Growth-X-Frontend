@@ -3,73 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutBrand } from "@/lib/auth";
+import { LayoutDashboard, Link2, Package, Sparkles, LogOut, TrendingUp } from "lucide-react";
 
 const navItems = [
-  { label: "Overview", href: "/overview", icon: "overview" },
-  { label: "Channels", href: "/channels", icon: "channels" },
-  { label: "SKUs", href: "/skus", icon: "skus" },
-  { label: "Insights", href: "/insights", icon: "insights" },
+  { label: "Overview", href: "/overview", icon: LayoutDashboard },
+  { label: "Channels", href: "/channels", icon: Link2 },
+  { label: "SKUs", href: "/skus", icon: Package },
+  { label: "Insights", href: "/insights", icon: Sparkles },
 ];
-
-function NavIcon({ name }: { name: string }) {
-  if (name === "overview") {
-    return (
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-        <rect x="0" y="0" width="7" height="7" rx="1.5" />
-        <rect x="9" y="0" width="7" height="7" rx="1.5" />
-        <rect x="0" y="9" width="7" height="7" rx="1.5" />
-        <rect x="9" y="9" width="7" height="7" rx="1.5" />
-      </svg>
-    );
-  }
-  if (name === "channels") {
-    return (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      >
-        <circle cx="3" cy="8" r="2" />
-        <circle cx="13" cy="3" r="2" />
-        <circle cx="13" cy="13" r="2" />
-        <line x1="5" y1="7" x2="11" y2="4" />
-        <line x1="5" y1="9" x2="11" y2="12" />
-      </svg>
-    );
-  }
-  if (name === "skus") {
-    return (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      >
-        <rect x="1" y="2" width="14" height="3" rx="1" />
-        <rect x="1" y="7" width="9" height="3" rx="1" />
-        <rect x="1" y="12" width="11" height="2" rx="1" />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <circle cx="8" cy="6" r="3" />
-      <path d="M8 9v4M5 13h6" />
-    </svg>
-  );
-}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -81,20 +22,23 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-[200px] bg-[#0C0C0C] border-r border-[#1A1A1A] flex flex-col h-screen sticky top-0 shrink-0">
+    <aside className="w-[240px] bg-white border-r border-neutral-200/60 flex flex-col h-screen sticky top-0 shrink-0 shadow-sm">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-[#1A1A1A]">
-        <span className="text-[#22C55E] font-semibold text-sm tracking-tight">
-          GrowthX AI
-        </span>
-        <p className="text-[#3A3A3A] text-[10px] mt-0.5 font-medium">
-          D2C Intelligence
-        </p>
+      <div className="px-6 py-6 border-b border-neutral-100 flex items-center gap-2">
+        <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center shadow-sm">
+          <TrendingUp className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+        </div>
+        <div>
+          <span className="text-slate-900 font-extrabold text-lg tracking-tight leading-none">
+            GrowthX
+          </span>
+        </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 space-y-0.5">
+      <nav className="flex-1 px-3 py-6 space-y-1.5">
         {navItems.map((item) => {
+          const Icon = item.icon;
           const isActive =
             pathname === item.href ||
             (item.href !== "/overview" &&
@@ -103,15 +47,14 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium transition-all
-                border-l-2
+              className={`flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all
                 ${
                   isActive
-                    ? "text-[#F0F0F0] bg-[#171717] border-[#22C55E]"
-                    : "text-[#555] hover:text-[#888] hover:bg-[#141414] border-transparent"
+                    ? "text-emerald-700 bg-emerald-50 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                 }`}
             >
-              <NavIcon name={item.icon} />
+              <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-emerald-600" : "text-slate-400"} />
               {item.label}
             </Link>
           );
@@ -119,18 +62,18 @@ export function Sidebar() {
       </nav>
 
       {/* User + Logout */}
-      <div className="px-4 py-4 border-t border-[#1A1A1A]">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-full bg-[#22C55E]/10 border border-[#22C55E]/25 flex items-center justify-center text-[9px] text-[#22C55E] font-bold">
+      <div className="px-4 py-4 border-t border-neutral-100 bg-slate-50/50 m-3 rounded-xl border">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-xs text-slate-600 font-bold shadow-inner">
             GX
           </div>
-          <span className="text-[#444] text-[11px]">Your Brand</span>
+          <span className="text-slate-700 text-sm font-bold">Your Brand</span>
         </div>
         <button
           onClick={handleLogout}
-          className="text-[#3A3A3A] text-[11px] hover:text-[#666] transition-colors w-full text-left cursor-pointer"
+          className="flex items-center gap-2 text-slate-500 text-xs font-semibold hover:text-slate-900 transition-colors w-full text-left cursor-pointer"
         >
-          Log out →
+          <LogOut size={14} /> Log out
         </button>
       </div>
     </aside>
