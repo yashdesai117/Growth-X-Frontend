@@ -171,6 +171,32 @@ function ChannelsPageContent() {
     } catch { setSyncing(null); }
   };
 
+  const handleConnect = async (channel: string) => {
+    if (channel !== "shopify") return;
+    try {
+      const res = await apiClient<{ redirect_url: string }>("/channels/shopify/connect/initiate", {
+        method: "POST",
+        body: JSON.stringify({ shop_domain: "growthx-ai-demo.myshopify.com" })
+      });
+      if (res.data?.redirect_url) {
+        window.location.href = res.data.redirect_url;
+      }
+    } catch (err) {
+      setError("Failed to initiate Shopify connection. Please try again.");
+    }
+  };
+
+  const handleDisconnect = async (channel: string) => {
+    if (channel !== "shopify") return;
+    if (!window.confirm("Disconnect Shopify? This will stop all data syncing.")) return;
+    try {
+      await apiClient(`/channels/${channel}/disconnect`, { method: "DELETE" });
+      loadData();
+    } catch (err) {
+      setError("Failed to disconnect. Please try again.");
+    }
+  };
+
   const handleSaveField = async (cost_type: string, valueStr: string, channel: string | null, sku_identifier: string | null, setSaving: (v: boolean) => void, setMsg: (v: string) => void) => {
     setSaving(true); setMsg("");
     try {
@@ -226,8 +252,8 @@ return (
                 <div key={ch.channel} className={isComingSoon ? "relative" : "relative"}>
                   <ChannelCard
                     channel={ch}
-                    onConnect={() => { if (ch.channel === "shopify") { /* existing logic */ } }}
-                    onDisconnect={() => { /* existing logic */ }}
+                    onConnect={() => handleConnect(ch.channel)}
+                    onDisconnect={() => handleDisconnect(ch.channel)}
                     onSyncNow={() => handleSyncNow(ch.channel)}
                   />
                   {isComingSoon && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center"><span className="text-xs font-bold text-slate-400 mt-2">Coming soon</span></div>}
