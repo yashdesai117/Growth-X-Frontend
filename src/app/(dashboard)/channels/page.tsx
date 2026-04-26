@@ -163,7 +163,6 @@ function ChannelsPageContent() {
   });
 
   const handleSyncNow = async (channel: string) => {
-    if (channel !== "shopify") return;
     setSyncing(channel);
     try {
       await triggerSync(channel);
@@ -172,25 +171,32 @@ function ChannelsPageContent() {
   };
 
   const handleConnect = async (channel: string) => {
-    if (channel !== "shopify") return;
     try {
-      const res = await apiClient<{ redirect_url: string }>("/channels/shopify/connect/initiate", {
-        method: "POST",
-        body: JSON.stringify({ shop_domain: "growthx-ai-demo.myshopify.com" })
-      });
-      if (res.data?.redirect_url) {
-        window.location.href = res.data.redirect_url;
+      if (channel === "shopify") {
+        const res = await apiClient<{ redirect_url: string }>("/api/v1/channels/shopify/connect/initiate", {
+          method: "POST",
+          body: JSON.stringify({ shop_domain: "growthx-ai-demo.myshopify.com" })
+        });
+        if (res.data?.redirect_url) {
+          window.location.href = res.data.redirect_url;
+        }
+      } else if (channel === "amazon") {
+        await apiClient("/api/v1/channels/amazon/connect/direct", {
+          method: "POST",
+          body: JSON.stringify({ seller_id: "A123456789", refresh_token: "mock_refresh_token" })
+        });
+        loadData();
       }
     } catch (err) {
-      setError("Failed to initiate Shopify connection. Please try again.");
+      setError(`Failed to initiate ${channel} connection. Please try again.`);
     }
   };
 
   const handleDisconnect = async (channel: string) => {
-    if (channel !== "shopify") return;
-    if (!window.confirm("Disconnect Shopify? This will stop all data syncing.")) return;
+    const capitalized = channel.charAt(0).toUpperCase() + channel.slice(1);
+    if (!window.confirm(`Disconnect ${capitalized}? This will stop all data syncing.`)) return;
     try {
-      await apiClient(`/channels/${channel}/disconnect`, { method: "DELETE" });
+      await apiClient(`/api/v1/channels/${channel}/disconnect`, { method: "DELETE" });
       loadData();
     } catch (err) {
       setError("Failed to disconnect. Please try again.");
