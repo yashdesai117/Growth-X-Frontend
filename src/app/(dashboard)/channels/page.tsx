@@ -173,17 +173,26 @@ function ChannelsPageContent() {
   const handleConnect = async (channel: string) => {
     try {
       if (channel === "shopify") {
+        const shopDomain = window.prompt("Enter your Shopify domain (e.g. your-store.myshopify.com):");
+        if (!shopDomain) return; // User cancelled
+        
         const res = await apiClient<{ redirect_url: string }>("/api/v1/channels/shopify/connect/initiate", {
           method: "POST",
-          body: JSON.stringify({ shop_domain: "growthx-ai-demo.myshopify.com" })
+          body: JSON.stringify({ shop_domain: shopDomain })
         });
         if (res.data?.redirect_url) {
           window.location.href = res.data.redirect_url;
         }
       } else if (channel === "amazon") {
+        const sellerId = window.prompt("Enter your Amazon Seller ID (e.g. A123456789):");
+        if (!sellerId) return;
+        
+        const refreshToken = window.prompt("Enter your Amazon SP-API Refresh Token:");
+        if (!refreshToken) return;
+
         await apiClient("/api/v1/channels/amazon/connect/direct", {
           method: "POST",
-          body: JSON.stringify({ seller_id: "A123456789", refresh_token: "mock_refresh_token" })
+          body: JSON.stringify({ seller_id: sellerId, refresh_token: refreshToken })
         });
         loadData();
       }
