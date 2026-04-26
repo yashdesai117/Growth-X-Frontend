@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { CatalogSku } from "@/types/api";
 import { SkuSummaryCards } from "@/components/skus/SkuSummaryCards";
 import { SkuTable } from "@/components/skus/SkuTable";
+import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -21,9 +22,6 @@ export default function SkusPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { "Authorization": `Bearer ${token}` };
-      
       const q = new URLSearchParams({
         page: page.toString(),
         page_size: "50"
@@ -31,13 +29,12 @@ export default function SkusPage() {
       if (channel !== "all") q.append("channel", channel);
       if (showMissingData) q.append("has_missing_data", "true");
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/skus/?${q}`, { headers });
-      const json = await res.json();
+      const res = await apiClient<{ success: boolean; data: { items: CatalogSku[]; total: number; page_size: number } }>(`/api/v1/skus/?${q}`);
 
-      if (json.success) {
-        setItems(json.data.items);
-        setTotalSkus(json.data.total);
-        setTotalPages(Math.ceil(json.data.total / json.data.page_size) || 1);
+      if (res.data?.success) {
+        setItems(res.data.data.items);
+        setTotalSkus(res.data.data.total);
+        setTotalPages(Math.ceil(res.data.data.total / res.data.data.page_size) || 1);
       }
     } catch (e) {
       toast.error("Failed to load SKUs");
@@ -53,16 +50,11 @@ export default function SkusPage() {
   const handleSyncSkus = async () => {
     setIsSyncing(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/skus/trigger-sku-sync`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const json = await res.json();
-      if (json.success) {
+      const res = await apiClient.post<{ success: boolean; error?: { message: string } }>("/api/v1/skus/trigger-sku-sync");
+      if (res.data?.success) {
         toast.success("SKU sync triggered. This may take a few minutes.");
       } else {
-        toast.error(json.error?.message || "Failed to trigger SKU sync");
+        toast.error(res.data?.error?.message || "Failed to trigger SKU sync");
       }
     } catch (e) {
       toast.error("Network error triggering sync");

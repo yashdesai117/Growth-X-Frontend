@@ -5,6 +5,7 @@ import { OrderRecord, OrdersSummary } from "@/types/api";
 import { OrderSummaryCards } from "@/components/orders/OrderSummaryCards";
 import { OrdersTable } from "@/components/orders/OrdersTable";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 
 // Assume fetchOrders and fetchOrdersSummary are defined in a lib or defined here
@@ -26,9 +27,6 @@ export default function OrdersPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { "Authorization": `Bearer ${token}` };
-      
       const q = new URLSearchParams({
         page: page.toString(),
         page_size: "50"
@@ -38,19 +36,16 @@ export default function OrdersPage() {
       if (dateTo) q.append("date_to", dateTo);
 
       const [ordersRes, summaryRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/orders/?${q}`, { headers }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/orders/summary`, { headers })
+        apiClient<{ success: boolean; data: { items: OrderRecord[]; total: number; page_size: number; summary: OrdersSummary } }>(`/api/v1/orders/?${q}`),
+        apiClient<{ success: boolean; data: OrdersSummary }>("/api/v1/orders/summary")
       ]);
 
-      const ordersJson = await ordersRes.json();
-      const summaryJson = await summaryRes.json();
-
-      if (ordersJson.success) {
-        setItems(ordersJson.data.items);
-        setTotalPages(Math.ceil(ordersJson.data.total / ordersJson.data.page_size) || 1);
+      if (ordersRes.data?.success) {
+        setItems(ordersRes.data.data.items);
+        setTotalPages(Math.ceil(ordersRes.data.data.total / ordersRes.data.data.page_size) || 1);
       }
-      if (summaryJson.success) {
-        setSummary(summaryJson.data);
+      if (summaryRes.data?.success) {
+        setSummary(summaryRes.data.data);
       }
     } catch (e) {
       toast.error("Failed to load orders");
