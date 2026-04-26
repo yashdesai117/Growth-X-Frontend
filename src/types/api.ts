@@ -198,3 +198,93 @@ export interface CostInput {
 export interface CostInputsList {
   cost_inputs: CostInput[];
 }
+// Raw product from a single channel
+export interface RawProduct {
+  raw_product_id: string;
+  tenant_id: string;
+  channel: 'shopify' | 'amazon';
+  platform_sku_id: string;
+  platform_product_id: string | null;
+  sku_code: string | null;
+  product_title: string;
+  variant_title: string | null;
+  selling_price: number | null;
+  inventory_quantity: number | null;
+  channel_referral_fee_pct: number | null;
+  fulfillment_fee_per_unit: number | null;
+  fulfillment_type: string | null;
+  listing_status: string | null;
+  synced_at: string;
+}
+
+// Channel-specific details for a catalog SKU (joined from raw_products)
+export interface ChannelSkuDetails {
+  selling_price: number | null;
+  inventory_quantity: number | null;
+  listing_status: string | null;
+  channel_referral_fee_pct: number | null;
+  fulfillment_fee_per_unit: number | null;
+  fulfillment_type: string | null;
+}
+
+// Canonical catalog entry
+export interface CatalogSku {
+  catalog_sku_id: string;
+  tenant_id: string;
+  canonical_sku_code: string;
+  display_name: string;
+  is_on_shopify: boolean;
+  is_on_amazon: boolean;
+  cogs_per_unit: number | null;
+  has_missing_data: boolean;
+  shopify_details: ChannelSkuDetails | null;
+  amazon_details: ChannelSkuDetails | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Paginated SKU list response
+export interface SkuListResponse {
+  items: CatalogSku[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+// Individual order record
+export interface OrderRecord {
+  raw_order_id: string;
+  channel: 'shopify' | 'amazon';
+  platform_order_id: string;
+  platform_sku_id: string;
+  sku_code: string | null;
+  product_title: string | null;
+  quantity: number;
+  selling_price_per_unit: number | null;
+  total_sale_price: number;
+  discount_amount: number | null;
+  return_status: string | null;
+  ordered_at: string;
+}
+
+// Paginated orders list response
+export interface OrderListResponse {
+  items: OrderRecord[];
+  total: number;
+  page: number;
+  page_size: number;
+  summary: {
+    total_orders: number;
+    total_gmv: number;
+    channels_breakdown: Record<string, number>;
+  };
+}
+
+// Orders summary response
+export interface OrdersSummary {
+  total_orders_30d: number;
+  total_gmv_30d: number;
+  total_returns_30d: number;
+  return_rate_pct: number;
+  by_channel: Record<string, { orders: number; gmv: number }>;
+}

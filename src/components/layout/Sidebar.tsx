@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutBrand } from "@/lib/auth";
-import { LayoutDashboard, Link2, Package, Sparkles, LogOut, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Link2, Package, ShoppingCart, Sparkles, LogOut, TrendingUp } from "lucide-react";
 import Image from "next/image";
 
 const navItems = [
   { label: "Overview", href: "/overview", icon: LayoutDashboard },
   { label: "Channels", href: "/channels", icon: Link2 },
   { label: "SKUs", href: "/skus", icon: Package },
+  { label: "Orders", href: "/orders", icon: ShoppingCart },
   { label: "Insights", href: "/insights", icon: Sparkles },
 ];
 

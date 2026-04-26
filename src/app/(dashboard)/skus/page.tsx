@@ -1,141 +1,151 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { fetchSkuList } from "@/lib/dashboard";
-import { SKUListTable } from "@/components/skus/SKUListTable";
-import { ArrowUp, ArrowDown } from "lucide-react";
-import type { SkuList, SkuListItem } from "@/types/api";
+import { useState, useEffect, useCallback } from "react";
+import { CatalogSku } from "@/types/api";
+import { SkuSummaryCards } from "@/components/skus/SkuSummaryCards";
+import { SkuTable } from "@/components/skus/SkuTable";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
-type SortBy = "contribution_margin_pct" | "net_revenue" | "return_rate_pct" | "units_sold";
-type SortDir = "asc" | "desc";
-
-const SORT_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: "contribution_margin_pct", label: "CM%" },
-  { value: "net_revenue", label: "Revenue" },
-  { value: "return_rate_pct", label: "Return Rate" },
-  { value: "units_sold", label: "Units Sold" },
-];
-
-export default function SKUsPage() {
-  const [skus, setSkus] = useState<SkuListItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>("contribution_margin_pct");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+export default function SkusPage() {
+  const [items, setItems] = useState<CatalogSku[]>([]);
+  const [totalSkus, setTotalSkus] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [channel, setChannel] = useState<string>("all");
+  const [showMissingData, setShowMissingData] = useState(false);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback(
-    async (appendCursor?: string) => {
-      if (appendCursor) setIsLoadingMore(true);
-      else setIsLoading(true);
-      setError(null);
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { "Authorization": `Bearer ${token}` };
+      
+      const q = new URLSearchParams({
+        page: page.toString(),
+        page_size: "50"
+      });
+      if (channel !== "all") q.append("channel", channel);
+      if (showMissingData) q.append("has_missing_data", "true");
 
-      try {
-        const data: SkuList = await fetchSkuList({
-          limit: 20,
-          cursor: appendCursor,
-          sort_by: sortBy,
-          sort_dir: sortDir,
-        });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/skus/?${q}`, { headers });
+      const json = await res.json();
 
-        if (appendCursor) {
-          setSkus((prev) => [...prev, ...data.skus]);
-        } else {
-          setSkus(data.skus);
-        }
-        setCursor(data.next_cursor);
-        setHasMore(data.has_more);
-        setTotalCount(data.total_skus);
-      } catch {
-        setError("Failed to load SKUs");
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+      if (json.success) {
+        setItems(json.data.items);
+        setTotalSkus(json.data.total);
+        setTotalPages(Math.ceil(json.data.total / json.data.page_size) || 1);
       }
-    },
-    [sortBy, sortDir]
+    } catch (e) {
+      toast.error("Failed to load SKUs");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [channel, showMissingData, page]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSyncSkus = async () => {
+    setIsSyncing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/skus/trigger-sku-sync`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("SKU sync triggered. This may take a few minutes.");
+      } else {
+        toast.error(json.error?.message || "Failed to trigger SKU sync");
+      }
+    } catch (e) {
+      toast.error("Network error triggering sync");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleUpdateSku = (updatedSku: CatalogSku) => {
+    setItems(items.map(sku => sku.catalog_sku_id === updatedSku.catalog_sku_id ? updatedSku : sku));
+    // Optionally update summary cards data but the re-fetch will do it or we can keep it simple
+  };
+
+  const filteredItems = items.filter(item => 
+    item.canonical_sku_code?.toLowerCase().includes(search.toLowerCase()) || 
+    item.display_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Initial load or sort change
-  useEffect(() => {
-    load();
-  }, [load]);
-
   return (
-    <div className="flex flex-col min-h-screen pb-12">
-      {/* Topbar */}
-      <div className="px-8 py-6 border-b border-neutral-200/60 sticky top-0 bg-white/80 backdrop-blur-md z-10 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">SKU Performance</h1>
-          {!isLoading && totalCount > 0 && (
-            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-              {totalCount} SKUs
-            </span>
-          )}
-        </div>
-
-        {/* Filters / Sorts */}
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* Sort By */}
-          <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-neutral-200/60">
-            {SORT_OPTIONS.map((opt) => {
-              const isActive = sortBy === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => setSortBy(opt.value)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer
-                    ${
-                      isActive
-                        ? "bg-white text-slate-900 shadow-sm border border-neutral-200/50"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                    }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Direction toggle */}
-          <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-neutral-200/60">
-            {(["asc", "desc"] as SortDir[]).map((ord) => (
-              <button
-                key={ord}
-                onClick={() => setSortDir(ord)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer
-                  ${
-                    sortDir === ord
-                      ? "bg-white text-slate-900 shadow-sm border border-neutral-200/50"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                  }`}
-              >
-                {ord === "asc" ? <ArrowUp size={14}/> : <ArrowDown size={14}/>}
-                {ord === "asc" ? "Ascending" : "Descending"}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">SKU Catalog</h1>
+        <button
+          onClick={handleSyncSkus}
+          disabled={isSyncing}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-md hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {isSyncing && <Loader2 className="animate-spin" size={16} />}
+          {isSyncing ? "Syncing..." : "Sync SKUs"}
+        </button>
       </div>
 
-      {/* Content */}
-      <div className="p-8 max-w-[1280px] mx-auto w-full">
-        {error && (
-          <div className="mb-6 px-5 py-4 bg-red-50 border border-red-200/60 rounded-xl shadow-sm text-sm font-medium text-red-800">
-            {error}
-          </div>
-        )}
+      <SkuSummaryCards items={items} totalSkus={totalSkus} />
 
-        <SKUListTable
-          items={skus}
-          onLoadMore={() => cursor && load(cursor)}
-          hasMore={hasMore}
-          isLoading={isLoading || isLoadingMore}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search SKUs..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1"
         />
+        <select
+          value={channel}
+          onChange={(e) => { setChannel(e.target.value); setPage(1); }}
+          className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          <option value="all">All Channels</option>
+          <option value="shopify">Shopify Only</option>
+          <option value="amazon">Amazon Only</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 border rounded px-3 py-2 cursor-pointer hover:bg-slate-100">
+          <input
+            type="checkbox"
+            checked={showMissingData}
+            onChange={(e) => { setShowMissingData(e.target.checked); setPage(1); }}
+            className="rounded text-emerald-600 focus:ring-emerald-500"
+          />
+          Missing COGS
+        </label>
       </div>
+
+      <SkuTable items={filteredItems} isLoading={isLoading} onUpdateSku={handleUpdateSku} />
+
+      {!isLoading && items.length > 0 && (
+        <div className="flex items-center justify-between mt-4">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
