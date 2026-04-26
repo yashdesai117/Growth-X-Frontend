@@ -50,7 +50,9 @@ export default function SkusPage() {
   const handleSyncSkus = async () => {
     setIsSyncing(true);
     try {
-      const res = await apiClient.post<{ success: boolean; error?: { message: string } }>("/api/v1/skus/trigger-sku-sync");
+      const res = await apiClient<{ success: boolean; error?: { message: string } }>("/api/v1/skus/trigger-sku-sync", {
+        method: 'POST'
+      });
       if (res.data?.success) {
         toast.success("SKU sync triggered. This may take a few minutes.");
       } else {
