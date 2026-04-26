@@ -124,6 +124,10 @@ function ChannelsPageContent() {
   const searchParams = useSearchParams();
   useEffect(() => {
     if (searchParams.get("shopify") !== "connected") return;
+    
+    // Clean the URL to prevent re-triggering
+    window.history.replaceState(null, '', '/channels');
+
     const supabase = createClient();
     let settled = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -262,17 +266,16 @@ return (
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {enrichedChannels.map((ch) => {
-              // Amazon is no longer 'Coming soon' - we have built the connector
-              const isComingSoon = ["woocommerce", "flipkart"].includes(ch.channel) && !ch.is_connected;
+              const isComingSoon = ["woocommerce", "flipkart"].includes(ch.channel);
               return (
-                <div key={ch.channel} className="relative">
+                <div key={ch.channel} className={isComingSoon && !ch.is_connected ? "relative" : ""}>
                   <ChannelCard
                     channel={ch}
                     onConnect={() => handleConnect(ch.channel)}
                     onDisconnect={() => handleDisconnect(ch.channel)}
                     onSyncNow={() => handleSyncNow(ch.channel)}
                   />
-                  {isComingSoon && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center"><span className="text-xs font-bold text-slate-400 mt-2">Coming soon</span></div>}
+                  {isComingSoon && !ch.is_connected && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center"><span className="text-xs font-bold text-slate-400 mt-2">Coming soon</span></div>}
                 </div>
               );
             })}
