@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutBrand } from "@/lib/auth";
 import { LayoutDashboard, Link2, Package, Sparkles, LogOut, TrendingUp } from "lucide-react";
+import Image from "next/image";
 
 const navItems = [
   { label: "Overview", href: "/overview", icon: LayoutDashboard },
@@ -24,15 +25,8 @@ export function Sidebar() {
   return (
     <aside className="w-[240px] bg-white border-r border-neutral-200/60 flex flex-col h-screen sticky top-0 shrink-0 shadow-sm">
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-neutral-100 flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center shadow-sm">
-          <TrendingUp className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-        </div>
-        <div>
-          <span className="text-slate-900 font-extrabold text-lg tracking-tight leading-none">
-            GrowthX
-          </span>
-        </div>
+      <div className="h-16 px-6 border-b border-neutral-100 flex items-center justify-center">
+        <Image src="/growthx-full-logo.png" alt="GrowthX" width={73} height={20} className="object-contain" />
       </div>
 
       {/* Nav */}

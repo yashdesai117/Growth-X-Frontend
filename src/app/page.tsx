@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ArrowRight, BarChart3, Zap, Shield, Sparkles, LineChart, Target, Command, TrendingUp } from "lucide-react";
@@ -15,12 +16,9 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="fixed top-0 inset-x-0 border-b border-neutral-200/50 bg-white/60 backdrop-blur-xl z-50 transition-all">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="font-bold text-xl tracking-tight flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm shadow-emerald-500/20">
-              <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
-            </div>
-            <span className="text-slate-900 font-extrabold tracking-tighter">GrowthX</span>
-          </div>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/growthx-full-logo.png" alt="GrowthX" width={84} height={24} className="object-contain" priority />
+          </Link>
           <div className="flex items-center gap-6 text-sm font-semibold text-slate-600">
             <Link href="/login" className="hover:text-slate-900 transition-colors">
               Log in

@@ -34,12 +34,12 @@ export default function SKUsPage() {
       setError(null);
 
       try {
-        const data: SkuList = await fetchSkuList(
-          appendCursor,
-          sortBy,
-          sortDir,
-          20
-        );
+        const data: SkuList = await fetchSkuList({
+          limit: 20,
+          cursor: appendCursor,
+          sort_by: sortBy,
+          sort_dir: sortDir,
+        });
 
         if (appendCursor) {
           setSkus((prev) => [...prev, ...data.skus]);

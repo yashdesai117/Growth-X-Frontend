@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { registerBrand, isAuthError } from "@/lib/auth";
-import { ArrowLeft, Sparkles, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
+import Image from "next/image";
 
 function validateEmail(email: string): string | null {
   if (!email) return "Email is required";
@@ -35,7 +36,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Track which fields have been blurred for per-field validation
   const [touched, setTouched] = useState({
     companyName: false,
     email: false,
@@ -54,7 +54,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    // Touch all fields to surface any hidden errors
     setTouched({ companyName: true, email: true, password: true });
 
     if (validateCompanyName(companyName) || validateEmail(email) || validatePassword(password)) {
@@ -79,11 +78,16 @@ export default function RegisterPage() {
         <ArrowLeft size={16} /> Back to home
       </Link>
 
-      {/* Wordmark */}
+      {/* Logo */}
       <div className="mb-8 text-center flex flex-col items-center">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-4">
-          <Sparkles className="w-6 h-6 text-white" strokeWidth={2} />
-        </div>
+        <Image
+          src="/growthx-full-logo.png"
+          alt="GrowthX"
+          width={98}
+          height={28}
+          className="mb-6 object-contain"
+          priority
+        />
         <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-2">
           Get Started
         </h1>
@@ -95,10 +99,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} noValidate className="space-y-5 relative z-10">
           {/* Company Name */}
           <div>
-            <label
-              htmlFor="company-name"
-              className="block text-sm font-bold text-slate-700 mb-1.5"
-            >
+            <label htmlFor="company-name" className="block text-sm font-bold text-slate-700 mb-1.5">
               Company name
             </label>
             <input
@@ -127,10 +128,7 @@ export default function RegisterPage() {
 
           {/* Email */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-bold text-slate-700 mb-1.5"
-            >
+            <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-1.5">
               Email address
             </label>
             <input
@@ -159,10 +157,7 @@ export default function RegisterPage() {
 
           {/* Password */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-bold text-slate-700 mb-1.5"
-            >
+            <label htmlFor="password" className="block text-sm font-bold text-slate-700 mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -189,10 +184,7 @@ export default function RegisterPage() {
                 type="button"
                 id="toggle-password-visibility"
                 onClick={() => setShowPassword((v) => !v)}
-                className="
-                  absolute right-3 top-1/2 -translate-y-1/2
-                  text-slate-400 hover:text-slate-600 transition-colors duration-150 p-1
-                "
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-150 p-1"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -232,10 +224,7 @@ export default function RegisterPage() {
       {/* Footer link */}
       <p className="mt-8 text-sm font-medium text-slate-500">
         Already have an account?{" "}
-        <Link
-          href="/login"
-          className="text-emerald-600 font-bold hover:text-emerald-700 transition-colors duration-150"
-        >
+        <Link href="/login" className="text-emerald-600 font-bold hover:text-emerald-700 transition-colors duration-150">
           Sign in
         </Link>
       </p>

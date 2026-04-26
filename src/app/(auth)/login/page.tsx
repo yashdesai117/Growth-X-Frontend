@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { loginBrand, isAuthError } from "@/lib/auth";
 import { Eye, EyeOff, Sparkles, ArrowLeft } from "lucide-react";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,11 +43,16 @@ export default function LoginPage() {
         <ArrowLeft size={16} /> Back to home
       </Link>
 
-      {/* Wordmark */}
+      {/* Logo */}
       <div className="mb-8 text-center flex flex-col items-center">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-4">
-          <Sparkles className="w-6 h-6 text-white" strokeWidth={2} />
-        </div>
+        <Image
+          src="/growthx-full-logo.png"
+          alt="GrowthX"
+          width={98}
+          height={28}
+          className="mb-6 object-contain"
+          priority
+        />
         <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-2">
           Welcome back
         </h1>

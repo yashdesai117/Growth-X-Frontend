@@ -16,6 +16,7 @@
  *   dismissInsight         → PATCH /api/v1/insights/{id}/dismiss
  *   fetchCostInputs        → GET /api/v1/tenant/cost-inputs
  *   createCostInput        → POST /api/v1/tenant/cost-inputs
+ *   deleteCostInput        → DELETE /api/v1/tenant/cost-inputs/{id}
  */
 
 import { apiClient } from "@/lib/api/client";
@@ -40,7 +41,6 @@ export async function fetchDashboardSummary(): Promise<DashboardSummary> {
 /**
  * Returns top 5 and bottom 5 SKUs by CM% using two parallel calls to
  * GET /api/v1/dashboard/skus (sort_dir=desc and sort_dir=asc).
- * The backend has no dedicated top/bottom endpoint — this is the correct approach.
  */
 export async function fetchTopSkus(limit = 5): Promise<TopSkus> {
   const base = `/api/v1/dashboard/skus?sort_by=contribution_margin_pct&limit=${limit}`;
@@ -64,24 +64,20 @@ export async function fetchMarginTrend(): Promise<MarginTrend> {
 
 /**
  * Paginated SKU list.
- * sortBy must be one of the backend's allowed columns:
- *   "contribution_margin" | "contribution_margin_pct" | "net_revenue"
- *   | "gross_revenue" | "units_sold" | "return_rate_pct"
- * sortDir: "asc" | "desc"
  */
-export async function fetchSkuList(
-  cursor?: string,
-  sortBy = "contribution_margin_pct",
-  sortDir = "asc",
-  limit = 20
-): Promise<SkuList> {
-  const params = new URLSearchParams({
-    sort_by: sortBy,
-    sort_dir: sortDir,         // ← backend param is sort_dir, not sort_order
-    limit: String(limit),
+export async function fetchSkuList(params: {
+  limit: number;
+  cursor?: string;
+  sort_by: string;
+  sort_dir: string;
+}): Promise<SkuList> {
+  const query = new URLSearchParams({
+    sort_by: params.sort_by,
+    sort_dir: params.sort_dir,
+    limit: String(params.limit),
   });
-  if (cursor) params.set("cursor", cursor);
-  const env = await apiClient<SkuList>(`/api/v1/dashboard/skus?${params.toString()}`);
+  if (params.cursor) query.set("cursor", params.cursor);
+  const env = await apiClient<SkuList>(`/api/v1/dashboard/skus?${query.toString()}`);
   if (env.status !== "success" || !env.data) throw new Error(env.error?.message ?? "Failed to load SKUs");
   return env.data;
 }
@@ -107,7 +103,6 @@ export async function triggerSync(channel = "shopify"): Promise<void> {
 
 /**
  * Trailing slash is required — backend route is @router.get("/") mounted at /insights.
- * Omitting the slash causes a 307 redirect which some fetch clients don't follow with POST.
  */
 export async function fetchInsights(isDismissed = false): Promise<InsightsList> {
   const env = await apiClient<InsightsList>(`/api/v1/insights/?is_dismissed=${isDismissed}`);
@@ -138,5 +133,14 @@ export async function createCostInput(data: {
   });
   if (env.status !== "success") {
     throw new Error(env.error?.message ?? `Failed to save ${data.cost_type}`);
+  }
+}
+
+export async function deleteCostInput(inputId: string): Promise<void> {
+  const env = await apiClient(`/api/v1/tenant/cost-inputs/${inputId}`, {
+    method: "DELETE",
+  });
+  if (env.status !== "success") {
+    throw new Error(env.error?.message ?? "Failed to delete cost input");
   }
 }
