@@ -1,0 +1,12 @@
+/**
+ * src/components/ui/.gitkeep
+ *
+ * Placeholder to ensure the components/ui/ directory is tracked by Git.
+ * Shadcn components will be generated into this directory in Session 02.
+ *
+ * To add components:
+ *   npx shadcn-ui@0.6.0 add button
+ *   npx shadcn-ui@0.6.0 add card
+ *   npx shadcn-ui@0.6.0 add input
+ *   etc.
+ */
