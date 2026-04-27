@@ -36,16 +36,16 @@ export default function OrdersPage() {
       if (dateTo) q.append("date_to", dateTo);
 
       const [ordersRes, summaryRes] = await Promise.all([
-        apiClient<{ success: boolean; data: { items: OrderRecord[]; total: number; page_size: number; summary: OrdersSummary } }>(`/api/v1/orders/?${q}`),
-        apiClient<{ success: boolean; data: OrdersSummary }>("/api/v1/orders/summary")
+        apiClient<{ items: OrderRecord[]; total: number; page_size: number; summary: OrdersSummary }>(`/api/v1/orders/?${q}`),
+        apiClient<OrdersSummary>("/api/v1/orders/summary")
       ]);
 
-      if (ordersRes.data?.success) {
-        setItems(ordersRes.data.data.items);
-        setTotalPages(Math.ceil(ordersRes.data.data.total / ordersRes.data.data.page_size) || 1);
+      if (ordersRes.status === "success" && ordersRes.data) {
+        setItems(ordersRes.data.items);
+        setTotalPages(Math.ceil(ordersRes.data.total / ordersRes.data.page_size) || 1);
       }
-      if (summaryRes.data?.success) {
-        setSummary(summaryRes.data.data);
+      if (summaryRes.status === "success" && summaryRes.data) {
+        setSummary(summaryRes.data);
       }
     } catch (e) {
       toast.error("Failed to load orders");

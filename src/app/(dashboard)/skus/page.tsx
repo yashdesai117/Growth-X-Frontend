@@ -29,12 +29,12 @@ export default function SkusPage() {
       if (channel !== "all") q.append("channel", channel);
       if (showMissingData) q.append("has_missing_data", "true");
 
-      const res = await apiClient<{ success: boolean; data: { items: CatalogSku[]; total: number; page_size: number } }>(`/api/v1/skus/?${q}`);
+      const res = await apiClient<{ items: CatalogSku[]; total: number; page_size: number }>(`/api/v1/skus/?${q}`);
 
-      if (res.data?.success) {
-        setItems(res.data.data.items);
-        setTotalSkus(res.data.data.total);
-        setTotalPages(Math.ceil(res.data.data.total / res.data.data.page_size) || 1);
+      if (res.status === "success" && res.data) {
+        setItems(res.data.items);
+        setTotalSkus(res.data.total);
+        setTotalPages(Math.ceil(res.data.total / res.data.page_size) || 1);
       }
     } catch (e) {
       toast.error("Failed to load SKUs");
@@ -50,13 +50,13 @@ export default function SkusPage() {
   const handleSyncSkus = async () => {
     setIsSyncing(true);
     try {
-      const res = await apiClient<{ success: boolean; error?: { message: string } }>("/api/v1/skus/trigger-sku-sync", {
+      const res = await apiClient<{ sync_job_ids: string[] }>("/api/v1/skus/trigger-sku-sync", {
         method: 'POST'
       });
-      if (res.data?.success) {
+      if (res.status === "success") {
         toast.success("SKU sync triggered. This may take a few minutes.");
       } else {
-        toast.error(res.data?.error?.message || "Failed to trigger SKU sync");
+        toast.error(res.error?.message || "Failed to trigger SKU sync");
       }
     } catch (e) {
       toast.error("Network error triggering sync");
