@@ -71,7 +71,7 @@ function ChannelsPageContent() {
   const [showSkuForm, setShowSkuForm] = useState(false);
   const [newSkuId, setNewSkuId] = useState("");
   const [newSkuCost, setNewSkuCost] = useState("");
-  const [newSkuType, setNewSkuType] = useState<"cogs_per_unit" | "shipping_per_order" | "packaging_per_unit">("cogs_per_unit");
+  const [newSkuType, setNewSkuType] = useState<"cogs_per_unit" | "logistics_per_order" | "packaging_per_unit">("cogs_per_unit");
   const [skuSaving, setSkuSaving] = useState(false);
   const [skuMsg, setSkuMsg] = useState("");
 
@@ -117,7 +117,7 @@ function ChannelsPageContent() {
       setShippingCost(pctShipping);
     } else {
       setShippingType("fixed");
-      setShippingCost(getCostValue(costInputs, "shipping_per_order", selectedChannel));
+      setShippingCost(getCostValue(costInputs, "logistics_per_order", selectedChannel));
     }
   }, [selectedChannel, costInputs]);
 
@@ -388,7 +388,7 @@ function ChannelsPageContent() {
                         {shippingType === "pct" ? (<span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>) : null}
                       </div>
                     </div>
-                    <button onClick={() => { const cType = shippingType === "fixed" ? "shipping_per_order" : "shipping_pct"; handleSaveField(cType, shippingCost, selectedChannel, null, setShippingCostSaving, setShippingCostMsg); }} disabled={shippingCostSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{shippingCostSaving ? "..." : "Save"}{shippingCostMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{shippingCostMsg}</span>}</button>
+                    <button onClick={() => { const cType = shippingType === "fixed" ? "logistics_per_order" : "logistics_pct"; handleSaveField(cType, shippingCost, selectedChannel, null, setShippingCostSaving, setShippingCostMsg); }} disabled={shippingCostSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{shippingCostSaving ? "..." : "Save"}{shippingCostMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{shippingCostMsg}</span>}</button>
                   </div>
                 </div>
 
@@ -420,7 +420,7 @@ function ChannelsPageContent() {
                         <button onClick={() => setShowSkuForm(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">Cancel</button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <select value={newSkuType} onChange={(e) => setNewSkuType(e.target.value as any)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm"><option value="cogs_per_unit">COGS (per unit)</option><option value="shipping_per_order">Shipping (per order)</option><option value="packaging_per_unit">Packaging (per unit)</option></select>
+                        <select value={newSkuType} onChange={(e) => setNewSkuType(e.target.value as any)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm"><option value="cogs_per_unit">COGS (per unit)</option><option value="logistics_per_order">Shipping (per order)</option><option value="packaging_per_unit">Packaging (per unit)</option></select>
                         <input type="text" placeholder="SKU ID (e.g. TS-SUMMER)" value={newSkuId} onChange={e => setNewSkuId(e.target.value)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm" />
                       </div>
                       <div className="flex gap-3">
