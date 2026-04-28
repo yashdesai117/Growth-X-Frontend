@@ -163,7 +163,7 @@ function ChannelsPageContent() {
   });
 
   const handleSyncNow = async (channel: string) => {
-    if (channel !== "shopify") return;
+    if (!["shopify", "amazon"].includes(channel)) return;
     setSyncing(channel);
     try {
       await triggerSync(channel);
@@ -226,8 +226,72 @@ return (
                 <div key={ch.channel} className={isComingSoon ? "relative" : "relative"}>
                   <ChannelCard
                     channel={ch}
-                    onConnect={() => { if (ch.channel === "shopify") { /* existing logic */ } }}
-                    onDisconnect={() => { /* existing logic */ }}
+                    onConnect={async () => {
+                      if (ch.channel === "shopify") {
+                        const domain = window.prompt(
+                          "Enter your Shopify store domain",
+                          "yourstore.myshopify.com"
+                        );
+                        if (!domain) return;
+                        apiClient<{ redirect_url: string }>(
+                          "/api/v1/channels/shopify/connect/initiate",
+                          {
+                            method: "POST",
+                            body: JSON.stringify({ shop_domain: domain }),
+                          }
+                        ).then((envelope) => {
+                          if (envelope.data?.redirect_url) {
+                            window.location.href = envelope.data.redirect_url;
+                          }
+                        }).catch(() => alert("Failed to initiate Shopify connection. Try again."));
+                      }
+                      if (ch.channel === "amazon") {
+                        const sellerId = window.prompt(
+                          "Step 1 of 2\n\nEnter your Amazon Seller ID (Merchant Token)\n\nFind it in: Seller Central → Settings → Account Info → Merchant Token\n\nFormat: A2XXXXXXXXXXX"
+                        );
+                        if (!sellerId || !sellerId.trim()) return;
+
+                        const refreshToken = window.prompt(
+                          "Step 2 of 2\n\nEnter your Amazon Refresh Token\n\nYou received this from your Solution Provider Portal app authorization."
+                        );
+                        if (!refreshToken || !refreshToken.trim()) return;
+
+                        try {
+                          await apiClient("/api/v1/channels/amazon/connect/direct", {
+                            method: "POST",
+                            body: JSON.stringify({
+                              seller_id: sellerId.trim(),
+                              refresh_token: refreshToken.trim(),
+                            }),
+                          });
+                          await loadData();
+                        } catch (err) {
+                          alert(
+                            err instanceof Error
+                              ? `Failed to connect Amazon: ${err.message}`
+                              : "Failed to connect Amazon. Please try again."
+                          );
+                        }
+                      }
+                    }}
+                    onDisconnect={async () => {
+                      const confirmed = window.confirm(
+                        `Disconnect ${ch.channel}?\n\nYour historical data will be preserved, but future syncs will stop.`
+                      );
+                      if (!confirmed) return;
+                      try {
+                        await apiClient(`/api/v1/channels/${ch.channel}/disconnect`, {
+                          method: "DELETE",
+                        });
+                        await loadData();
+                      } catch (err) {
+                        alert(
+                          err instanceof Error
+                            ? `Failed to disconnect: ${err.message}`
+                            : "Failed to disconnect. Please try again."
+                        );
+                      }
+                    }}
                     onSyncNow={() => handleSyncNow(ch.channel)}
                   />
                   {isComingSoon && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center"><span className="text-xs font-bold text-slate-400 mt-2">Coming soon</span></div>}
