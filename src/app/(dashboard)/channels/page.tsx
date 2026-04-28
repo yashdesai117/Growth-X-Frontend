@@ -221,7 +221,7 @@ return (
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {enrichedChannels.map((ch) => {
-              const isComingSoon = ["amazon", "woocommerce", "flipkart"].includes(ch.channel) && !ch.is_connected;
+              const isComingSoon = ["woocommerce", "flipkart"].includes(ch.channel) && !ch.is_connected;
               return (
                 <div key={ch.channel} className={isComingSoon ? "relative" : "relative"}>
                   <ChannelCard
