@@ -1,13 +1,77 @@
+import { useState } from "react";
 import { RawListing } from "@/types/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
 
 interface Props {
   items: RawListing[];
   isLoading: boolean;
+  onRefresh: () => void;
 }
 
-export function SkuTable({ items, isLoading }: Props) {
+export function SkuTable({ items, isLoading, onRefresh }: Props) {
+  const [isMapping, setIsMapping] = useState<string | null>(null);
+  const [skuInputs, setSkuInputs] = useState<Record<string, string>>({});
+
+  const handleMapSku = async (listingId: string, platformSkuId: string, channel: string) => {
+    const canonicalCode = skuInputs[listingId];
+    if (!canonicalCode?.trim()) {
+      toast.error("Please enter a SKU code");
+      return;
+    }
+
+    setIsMapping(listingId);
+    try {
+      const res = await apiClient("/api/v1/catalog/map", {
+        method: "POST",
+        body: JSON.stringify({
+          canonical_sku_code: canonicalCode,
+          platform_sku_id: platformSkuId,
+          channel,
+        }),
+      });
+
+      if (res.status === "success") {
+        toast.success("SKU mapped successfully");
+        setSkuInputs(prev => ({ ...prev, [listingId]: "" }));
+        onRefresh();
+      } else {
+        toast.error((res.error as any)?.message || "Failed to map SKU");
+      }
+    } catch (e) {
+      toast.error("Network error mapping SKU");
+    } finally {
+      setIsMapping(null);
+    }
+  };
+
+  const handleUnmapSku = async (listingId: string, platformSkuId: string, channel: string) => {
+    setIsMapping(listingId);
+    try {
+      const res = await apiClient("/api/v1/catalog/map", {
+        method: "DELETE",
+        body: JSON.stringify({
+          platform_sku_id: platformSkuId,
+          channel,
+        }),
+      });
+
+      if (res.status === "success") {
+        toast.success("SKU unmapped successfully");
+        onRefresh();
+      } else {
+        toast.error((res.error as any)?.message || "Failed to unmap SKU");
+      }
+    } catch (e) {
+      toast.error("Network error unmapping SKU");
+    } finally {
+      setIsMapping(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -31,7 +95,7 @@ export function SkuTable({ items, isLoading }: Props) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>SKU Code</TableHead>
+            <TableHead>Canonical SKU</TableHead>
             <TableHead>Product Name</TableHead>
             <TableHead>Channel</TableHead>
             <TableHead>Price</TableHead>
@@ -42,7 +106,37 @@ export function SkuTable({ items, isLoading }: Props) {
         <TableBody>
           {items.map((listing) => (
             <TableRow key={listing.listing_id}>
-              <TableCell className="font-mono text-xs">{listing.sku_code || '—'}</TableCell>
+              <TableCell>
+                {listing.sku_code ? (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded border border-slate-200">{listing.sku_code}</span>
+                    <button
+                      onClick={() => handleUnmapSku(listing.listing_id, listing.platform_sku_id, listing.channel)}
+                      disabled={isMapping === listing.listing_id}
+                      className="text-[10px] uppercase font-bold tracking-wider text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                    >
+                      {isMapping === listing.listing_id ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : "Unlink"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter SKU..."
+                      value={skuInputs[listing.listing_id] || ""}
+                      onChange={(e) => setSkuInputs(prev => ({ ...prev, [listing.listing_id]: e.target.value }))}
+                      className="border rounded px-2 py-1 text-xs w-28 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                    />
+                    <button
+                      onClick={() => handleMapSku(listing.listing_id, listing.platform_sku_id, listing.channel)}
+                      disabled={isMapping === listing.listing_id || !skuInputs[listing.listing_id]?.trim()}
+                      className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                    >
+                      {isMapping === listing.listing_id ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : "Link"}
+                    </button>
+                  </div>
+                )}
+              </TableCell>
               <TableCell className="font-medium truncate max-w-[250px]" title={listing.product_name}>
                 {listing.product_name}
               </TableCell>

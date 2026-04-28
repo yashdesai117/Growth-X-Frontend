@@ -118,7 +118,7 @@ export default function SkusPage() {
         </select>
       </div>
 
-      <SkuTable items={items} isLoading={isLoading} />
+      <SkuTable items={items} isLoading={isLoading} onRefresh={loadData} />
 
       {!isLoading && (pageIndex > 0 || hasMore) && (
         <div className="flex items-center justify-between mt-4">

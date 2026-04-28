@@ -18,8 +18,8 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { PlusCircle } from "lucide-react";
 
 const SUPPORTED_CHANNELS = [
-  { slug: "shopify",  label: "Shopify" },
-  { slug: "amazon",   label: "Amazon" },
+  { slug: "shopify", label: "Shopify" },
+  { slug: "amazon", label: "Amazon" },
   { slug: "flipkart", label: "Flipkart" },
   { slug: "woocommerce", label: "WooCommerce" },
 ] as const;
@@ -203,7 +203,7 @@ function ChannelsPageContent() {
 
   const skuOverrides = costInputs.filter(c => c.sku_identifier !== null && c.channel === selectedChannel);
 
-return (
+  return (
     <div className="flex flex-col min-h-screen pb-12">
       <div className="flex items-center px-8 py-6 border-b border-neutral-200/60 sticky top-0 bg-white/80 backdrop-blur-md z-10 shadow-sm">
         <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Channels & Costs</h1>
@@ -217,7 +217,7 @@ return (
         <section className="space-y-4">
           <div>
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">Sales Channels</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1">Shopify is live. Additional channels are coming soon.</p>
+            <p className="text-sm font-medium text-slate-500 mt-1">Shopify and Amazon is live. Additional channels are coming soon.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {enrichedChannels.map((ch) => {
@@ -324,26 +324,26 @@ return (
                       <div className="flex-1">
                         <label className="text-xs font-bold text-slate-700 block mb-1.5">Payment Gateway Fee</label>
                         <div className="relative">
-                          <input type="number" step="0.01" min="0" placeholder="2.00" value={gatewayFee} onChange={e => setGatewayFee(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-4 pr-8 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all"/>
+                          <input type="number" step="0.01" min="0" placeholder="2.00" value={gatewayFee} onChange={e => setGatewayFee(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-4 pr-8 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all" />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
                         </div>
                       </div>
                       <button onClick={() => handleSaveField("payment_gateway_fee_pct", gatewayFee, null, null, setGatewayFeeSaving, setGatewayFeeMsg)} disabled={gatewayFeeSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{gatewayFeeSaving ? "..." : "Save"}{gatewayFeeMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{gatewayFeeMsg}</span>}</button>
                     </div>
-                     {/* Packaging Cost */}
+                    {/* Packaging Cost */}
                     <div className="flex items-end gap-3">
                       <div className="flex-1">
                         <label className="text-xs font-bold text-slate-700 block mb-1.5">Packaging Cost</label>
                         <div className="relative">
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
-                          <input type="number" step="0.01" min="0" placeholder="0.00" value={packagingCost} onChange={e => setPackagingCost(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all"/>
+                          <input type="number" step="0.01" min="0" placeholder="0.00" value={packagingCost} onChange={e => setPackagingCost(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all" />
                         </div>
                       </div>
                       <button onClick={() => handleSaveField("packaging_per_unit", packagingCost, null, null, setPackagingCostSaving, setPackagingCostMsg)} disabled={packagingCostSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{packagingCostSaving ? "..." : "Save"}{packagingCostMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{packagingCostMsg}</span>}</button>
                     </div>
                   </div>
                 </div>
-                
+
                 {/* CHANNEL-SPECIFIC COSTS */}
                 <div className="space-y-6">
                   <div className="space-y-2">
@@ -352,23 +352,23 @@ return (
                       {connectedChannels.map(ch => (<option key={ch.slug} value={ch.slug}>{ch.label}</option>))}
                     </select>
                   </div>
-                   {/* Platform Fee */}
+                  {/* Platform Fee */}
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
                       <label className="text-xs font-bold text-slate-700 block mb-1.5">Platform & Referral Fees</label>
                       <div className="relative">
-                        <input type="number" step="0.01" min="0" placeholder="2.00" value={platformFee} onChange={e => setPlatformFee(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-4 pr-8 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all"/>
+                        <input type="number" step="0.01" min="0" placeholder="2.00" value={platformFee} onChange={e => setPlatformFee(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-4 pr-8 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all" />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
                       </div>
                     </div>
                     <button onClick={() => handleSaveField("platform_fee_pct", platformFee, selectedChannel, null, setPlatformFeeSaving, setPlatformFeeMsg)} disabled={platformFeeSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{platformFeeSaving ? "..." : "Save"}{platformFeeMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{platformFeeMsg}</span>}</button>
                   </div>
-                   {/* Ad Spend */}
+                  {/* Ad Spend */}
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
                       <label className="text-xs font-bold text-slate-700 block mb-1.5">Blended Ad Spend</label>
                       <div className="relative">
-                        <input type="number" step="0.01" min="0" placeholder="10.00" value={adSpend} onChange={e => setAdSpend(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-4 pr-8 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all"/>
+                        <input type="number" step="0.01" min="0" placeholder="10.00" value={adSpend} onChange={e => setAdSpend(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-4 pr-8 py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all" />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
                       </div>
                     </div>
@@ -376,62 +376,62 @@ return (
                   </div>
                   {/* Shipping Costs */}
                   <div className="flex items-end gap-3">
-                     <div className="flex-1">
-                        <label className="text-xs font-bold text-slate-700 block mb-1.5">Shipping Cost</label>
-                        <div className="flex gap-4 mb-3">
-                           <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="shippingType" value="fixed" checked={shippingType === "fixed"} onChange={() => setShippingType("fixed")} className="accent-emerald-500 w-4 h-4"/><span className="text-sm font-bold text-slate-700">Per Order (₹)</span></label>
-                           <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="shippingType" value="pct" checked={shippingType === "pct"} onChange={() => setShippingType("pct")} className="accent-emerald-500 w-4 h-4"/><span className="text-sm font-bold text-slate-700">% of Revenue</span></label>
-                        </div>
-                        <div className="relative">
-                           {shippingType === "fixed" ? (<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>) : null}
-                           <input type="number" step="0.01" min="0" placeholder="0.00" value={shippingCost} onChange={e => setShippingCost(e.target.value)} className={`w-full bg-white border border-neutral-200 rounded-xl py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all ${shippingType === 'fixed' ? 'pl-8 pr-4' : 'pl-4 pr-8'}`}/>
-                           {shippingType === "pct" ? (<span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>) : null}
-                        </div>
-                     </div>
-                     <button onClick={() => { const cType = shippingType === "fixed" ? "shipping_per_order" : "shipping_pct"; handleSaveField(cType, shippingCost, selectedChannel, null, setShippingCostSaving, setShippingCostMsg); }} disabled={shippingCostSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{shippingCostSaving ? "..." : "Save"}{shippingCostMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{shippingCostMsg}</span>}</button>
+                    <div className="flex-1">
+                      <label className="text-xs font-bold text-slate-700 block mb-1.5">Shipping Cost</label>
+                      <div className="flex gap-4 mb-3">
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="shippingType" value="fixed" checked={shippingType === "fixed"} onChange={() => setShippingType("fixed")} className="accent-emerald-500 w-4 h-4" /><span className="text-sm font-bold text-slate-700">Per Order (₹)</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="shippingType" value="pct" checked={shippingType === "pct"} onChange={() => setShippingType("pct")} className="accent-emerald-500 w-4 h-4" /><span className="text-sm font-bold text-slate-700">% of Revenue</span></label>
+                      </div>
+                      <div className="relative">
+                        {shippingType === "fixed" ? (<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>) : null}
+                        <input type="number" step="0.01" min="0" placeholder="0.00" value={shippingCost} onChange={e => setShippingCost(e.target.value)} className={`w-full bg-white border border-neutral-200 rounded-xl py-3 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all ${shippingType === 'fixed' ? 'pl-8 pr-4' : 'pl-4 pr-8'}`} />
+                        {shippingType === "pct" ? (<span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>) : null}
+                      </div>
+                    </div>
+                    <button onClick={() => { const cType = shippingType === "fixed" ? "shipping_per_order" : "shipping_pct"; handleSaveField(cType, shippingCost, selectedChannel, null, setShippingCostSaving, setShippingCostMsg); }} disabled={shippingCostSaving} className="h-12 px-6 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-white hover:bg-slate-800 shadow-sm active:scale-95 transition-all">{shippingCostSaving ? "..." : "Save"}{shippingCostMsg && <span className="text-xs font-bold text-emerald-600 self-center ml-2">{shippingCostMsg}</span>}</button>
                   </div>
                 </div>
 
                 {/* SKU Overrides */}
                 <div className="pt-6 border-t border-neutral-100">
-                    <h3 className="text-sm font-extrabold text-slate-900 block mb-2">SKU-Specific Cost Overrides</h3>
-                    <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">For products with unique COGS or shipping (e.g., heavy/bulky items).</p>
-                    {skuOverrides.length > 0 && (
-                      <div className="mb-4 space-y-2 border border-neutral-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                        {skuOverrides.map(o => (
-                          <div key={o.input_id} className="flex items-center justify-between p-3 text-sm border-b border-neutral-100 last:border-0 hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <span className="text-slate-500 font-medium w-36 truncate" title={o.cost_type.replace(/_/g, ' ')}>{o.cost_type.replace(/_/g, ' ')}</span>
-                              <span className="text-slate-900 font-bold font-mono px-2 py-0.5 bg-slate-100 rounded-md">{o.sku_identifier}</span>
-                              <span className="text-emerald-600 font-black font-mono ml-2">₹{Number(o.value).toFixed(2)}</span>
-                            </div>
-                            <button onClick={() => handleDeleteSku(o.input_id)} className="text-slate-400 hover:text-red-600 px-2 font-bold cursor-pointer transition-colors">✕</button>
+                  <h3 className="text-sm font-extrabold text-slate-900 block mb-2">SKU-Specific Cost Overrides</h3>
+                  <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">For products with unique COGS or shipping (e.g., heavy/bulky items).</p>
+                  {skuOverrides.length > 0 && (
+                    <div className="mb-4 space-y-2 border border-neutral-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                      {skuOverrides.map(o => (
+                        <div key={o.input_id} className="flex items-center justify-between p-3 text-sm border-b border-neutral-100 last:border-0 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className="text-slate-500 font-medium w-36 truncate" title={o.cost_type.replace(/_/g, ' ')}>{o.cost_type.replace(/_/g, ' ')}</span>
+                            <span className="text-slate-900 font-bold font-mono px-2 py-0.5 bg-slate-100 rounded-md">{o.sku_identifier}</span>
+                            <span className="text-emerald-600 font-black font-mono ml-2">₹{Number(o.value).toFixed(2)}</span>
                           </div>
-                        ))}
+                          <button onClick={() => handleDeleteSku(o.input_id)} className="text-slate-400 hover:text-red-600 px-2 font-bold cursor-pointer transition-colors">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!showSkuForm ? (
+                    <button onClick={() => setShowSkuForm(true)} className="flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-bold transition-colors"><PlusCircle size={16} /> Add SKU override</button>
+                  ) : (
+                    <div className="p-4 bg-slate-50 border border-neutral-200/60 rounded-xl mt-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">New SKU Override</span>
+                        <button onClick={() => setShowSkuForm(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">Cancel</button>
                       </div>
-                    )}
-                    
-                    {!showSkuForm ? (
-                      <button onClick={() => setShowSkuForm(true)} className="flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-bold transition-colors"><PlusCircle size={16}/> Add SKU override</button>
-                    ) : (
-                      <div className="p-4 bg-slate-50 border border-neutral-200/60 rounded-xl mt-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                           <span className="text-sm font-bold text-slate-900">New SKU Override</span>
-                           <button onClick={() => setShowSkuForm(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">Cancel</button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                           <select value={newSkuType} onChange={(e) => setNewSkuType(e.target.value as any)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm"><option value="cogs_per_unit">COGS (per unit)</option><option value="shipping_per_order">Shipping (per order)</option><option value="packaging_per_unit">Packaging (per unit)</option></select>
-                           <input type="text" placeholder="SKU ID (e.g. TS-SUMMER)" value={newSkuId} onChange={e => setNewSkuId(e.target.value)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm"/>
-                        </div>
-                        <div className="flex gap-3">
-                           <div className="relative flex-1">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
-                              <input type="number" step="0.01" min="0" placeholder="Cost" value={newSkuCost} onChange={e => setNewSkuCost(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-8 pr-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm"/>
-                           </div>
-                           <button onClick={handleAddSkuOverride} disabled={skuSaving} className="px-6 py-2 bg-emerald-600 border border-emerald-700 rounded-xl text-sm font-bold text-white hover:bg-emerald-700 shadow-sm active:scale-95 transition-all">{skuSaving ? "..." : "Add"}{skuMsg && <span className="text-xs font-bold text-emerald-100 self-center ml-2">{skuMsg}</span>}</button>
-                        </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <select value={newSkuType} onChange={(e) => setNewSkuType(e.target.value as any)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm"><option value="cogs_per_unit">COGS (per unit)</option><option value="shipping_per_order">Shipping (per order)</option><option value="packaging_per_unit">Packaging (per unit)</option></select>
+                        <input type="text" placeholder="SKU ID (e.g. TS-SUMMER)" value={newSkuId} onChange={e => setNewSkuId(e.target.value)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm" />
                       </div>
-                    )}
+                      <div className="flex gap-3">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
+                          <input type="number" step="0.01" min="0" placeholder="Cost" value={newSkuCost} onChange={e => setNewSkuCost(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl pl-8 pr-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 shadow-sm" />
+                        </div>
+                        <button onClick={handleAddSkuOverride} disabled={skuSaving} className="px-6 py-2 bg-emerald-600 border border-emerald-700 rounded-xl text-sm font-bold text-white hover:bg-emerald-700 shadow-sm active:scale-95 transition-all">{skuSaving ? "..." : "Add"}{skuMsg && <span className="text-xs font-bold text-emerald-100 self-center ml-2">{skuMsg}</span>}</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}

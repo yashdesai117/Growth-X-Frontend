@@ -99,13 +99,12 @@ export function ChannelCard({
               onClick={onSyncNow}
               disabled={isSyncing}
               className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-lg border transition-all active:scale-95 shadow-sm
-                ${
-                  isSyncing
-                    ? "bg-slate-50 border-neutral-200 text-slate-400 cursor-not-allowed"
-                    : "bg-white border-neutral-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+                ${isSyncing
+                  ? "bg-slate-50 border-neutral-200 text-slate-400 cursor-not-allowed"
+                  : "bg-white border-neutral-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
                 }`}
             >
-              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} strokeWidth={2.5}/>
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} strokeWidth={2.5} />
               {isSyncing ? "Syncing..." : "Sync"}
             </button>
             <button
