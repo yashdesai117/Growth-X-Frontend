@@ -1,86 +1,77 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { OrderRecord, OrdersSummary } from "@/types/api";
-import { OrderSummaryCards } from "@/components/orders/OrderSummaryCards";
+import { OrderRecord, CatalogOrdersResponse } from "@/types/api";
 import { OrdersTable } from "@/components/orders/OrdersTable";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 
-// Assume fetchOrders and fetchOrdersSummary are defined in a lib or defined here
-// For this challenge, we will just define inline fetch functions if not in lib/api.
-// Actually I'll just write inline fetch functions.
-
 export default function OrdersPage() {
   const [items, setItems] = useState<OrderRecord[]>([]);
-  const [summary, setSummary] = useState<OrdersSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [channel, setChannel] = useState<string>("all");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   
-  // Dates
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  // Pagination
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  
+  const currentCursor = pageIndex === 0 ? null : cursorHistory[pageIndex - 1];
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const q = new URLSearchParams({
-        page: page.toString(),
-        page_size: "50"
+        limit: "10"
       });
       if (channel !== "all") q.append("channel", channel);
-      if (dateFrom) q.append("date_from", dateFrom);
-      if (dateTo) q.append("date_to", dateTo);
+      if (currentCursor) q.append("cursor", currentCursor);
 
-      const [ordersRes, summaryRes] = await Promise.all([
-        apiClient<{ items: OrderRecord[]; total: number; page_size: number; summary: OrdersSummary }>(`/api/v1/orders/?${q}`),
-        apiClient<OrdersSummary>("/api/v1/orders/summary")
-      ]);
+      const res = await apiClient<CatalogOrdersResponse>(`/api/v1/catalog/orders?${q}`);
 
-      if (ordersRes.status === "success" && ordersRes.data) {
-        setItems(ordersRes.data.items);
-        setTotalPages(Math.ceil(ordersRes.data.total / ordersRes.data.page_size) || 1);
-      }
-      if (summaryRes.status === "success" && summaryRes.data) {
-        setSummary(summaryRes.data);
+      if (res.status === "success" && res.data) {
+        setItems(res.data.orders);
+        setNextCursor(res.data.next_cursor);
+        setHasMore(res.data.has_more);
       }
     } catch (e) {
       toast.error("Failed to load orders");
     } finally {
       setIsLoading(false);
     }
-  }, [channel, page, dateFrom, dateTo]);
+  }, [channel, currentCursor]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  const handleNextPage = () => {
+    if (!hasMore || !nextCursor) return;
+    setCursorHistory(prev => {
+      const newHist = [...prev];
+      newHist[pageIndex] = nextCursor;
+      return newHist;
+    });
+    setPageIndex(p => p + 1);
+  };
+
+  const handlePrevPage = () => {
+    setPageIndex(p => Math.max(0, p - 1));
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Orders</h1>
-        <div className="flex gap-4">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
       </div>
 
-      <OrderSummaryCards summary={summary} />
-
-      <Tabs value={channel} onValueChange={(val) => { setChannel(val); setPage(1); }} className="mb-6">
+      <Tabs value={channel} onValueChange={(val) => { 
+        setChannel(val); 
+        setPageIndex(0); 
+        setCursorHistory([]); 
+      }} className="mb-6">
         <TabsList>
           <TabsTrigger value="all">All Channels</TabsTrigger>
           <TabsTrigger value="shopify">Shopify</TabsTrigger>
@@ -90,19 +81,19 @@ export default function OrdersPage() {
 
       <OrdersTable items={items} isLoading={isLoading} />
 
-      {!isLoading && items.length > 0 && (
+      {!isLoading && (pageIndex > 0 || hasMore) && (
         <div className="flex items-center justify-between mt-4">
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
+            onClick={handlePrevPage}
+            disabled={pageIndex === 0}
             className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
           >
             Previous
           </button>
-          <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+          <span className="text-sm text-slate-500">Page {pageIndex + 1}</span>
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            onClick={handleNextPage}
+            disabled={!hasMore}
             className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
           >
             Next

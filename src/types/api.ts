@@ -251,6 +251,34 @@ export interface SkuListResponse {
   page_size: number;
 }
 
+export interface RawListing {
+  id: string;
+  channel: 'shopify' | 'amazon';
+  platform_sku_id: string;
+  platform_product_id: string | null;
+  product_name: string;
+  sku_code: string | null;
+  price: number | null;
+  quantity_available: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CatalogListingsResponse {
+  listings: RawListing[];
+  next_cursor: string | null;
+  has_more: boolean;
+  channel: string | null;
+}
+
+export interface CatalogOrdersResponse {
+  orders: OrderRecord[];
+  next_cursor: string | null;
+  has_more: boolean;
+  channel: string | null;
+}
+
 // Individual order record
 export interface OrderRecord {
   raw_order_id: string;

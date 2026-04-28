@@ -240,10 +240,11 @@ return (
                             body: JSON.stringify({ shop_domain: domain }),
                           }
                         ).then((envelope) => {
+                          if (envelope.status !== "success") throw new Error(envelope.error?.message || "Failed");
                           if (envelope.data?.redirect_url) {
                             window.location.href = envelope.data.redirect_url;
                           }
-                        }).catch(() => alert("Failed to initiate Shopify connection. Try again."));
+                        }).catch((err) => alert("Failed to initiate Shopify connection. " + err.message));
                       }
                       if (ch.channel === "amazon") {
                         const sellerId = window.prompt(
@@ -257,13 +258,14 @@ return (
                         if (!refreshToken || !refreshToken.trim()) return;
 
                         try {
-                          await apiClient("/api/v1/channels/amazon/connect/direct", {
+                          const envelope = await apiClient("/api/v1/channels/amazon/connect/direct", {
                             method: "POST",
                             body: JSON.stringify({
                               seller_id: sellerId.trim(),
                               refresh_token: refreshToken.trim(),
                             }),
                           });
+                          if (envelope.status !== "success") throw new Error(envelope.error?.message || "Failed");
                           await loadData();
                         } catch (err) {
                           alert(
@@ -280,9 +282,10 @@ return (
                       );
                       if (!confirmed) return;
                       try {
-                        await apiClient(`/api/v1/channels/${ch.channel}/disconnect`, {
+                        const envelope = await apiClient(`/api/v1/channels/${ch.channel}/disconnect`, {
                           method: "DELETE",
                         });
+                        if (envelope.status !== "success") throw new Error(envelope.error?.message || "Failed to disconnect");
                         await loadData();
                       } catch (err) {
                         alert(

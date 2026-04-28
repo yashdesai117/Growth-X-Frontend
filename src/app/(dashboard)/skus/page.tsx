@@ -1,50 +1,48 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CatalogSku } from "@/types/api";
-import { SkuSummaryCards } from "@/components/skus/SkuSummaryCards";
+import { RawListing, CatalogListingsResponse } from "@/types/api";
 import { SkuTable } from "@/components/skus/SkuTable";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
 
 export default function SkusPage() {
-  const [items, setItems] = useState<CatalogSku[]>([]);
-  const [totalSkus, setTotalSkus] = useState(0);
+  const [items, setItems] = useState<RawListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [channel, setChannel] = useState<string>("all");
-  const [showMissingData, setShowMissingData] = useState(false);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  
+  // Pagination
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+
+  const currentCursor = pageIndex === 0 ? null : cursorHistory[pageIndex - 1];
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { "Authorization": `Bearer ${token}` };
-      
       const q = new URLSearchParams({
-        page: page.toString(),
-        page_size: "50"
+        limit: "6"
       });
       if (channel !== "all") q.append("channel", channel);
-      if (showMissingData) q.append("has_missing_data", "true");
+      if (currentCursor) q.append("cursor", currentCursor);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/skus/?${q}`, { headers });
-      const json = await res.json();
-
-      if (json.success) {
-        setItems(json.data.items);
-        setTotalSkus(json.data.total);
-        setTotalPages(Math.ceil(json.data.total / json.data.page_size) || 1);
+      const res = await apiClient<CatalogListingsResponse>(`/api/v1/catalog/listings?${q}`);
+      
+      if (res.status === "success" && res.data) {
+        setItems(res.data.listings);
+        setNextCursor(res.data.next_cursor);
+        setHasMore(res.data.has_more);
       }
     } catch (e) {
-      toast.error("Failed to load SKUs");
+      toast.error("Failed to load listings");
     } finally {
       setIsLoading(false);
     }
-  }, [channel, showMissingData, page]);
+  }, [channel, currentCursor]);
 
   useEffect(() => {
     loadData();
@@ -60,9 +58,9 @@ export default function SkusPage() {
       });
       const json = await res.json();
       if (json.success) {
-        toast.success("SKU sync triggered. This may take a few minutes.");
+        toast.success("Sync triggered. This may take a few minutes.");
       } else {
-        toast.error(json.error?.message || "Failed to trigger SKU sync");
+        toast.error(json.error?.message || "Failed to trigger sync");
       }
     } catch (e) {
       toast.error("Network error triggering sync");
@@ -71,15 +69,19 @@ export default function SkusPage() {
     }
   };
 
-  const handleUpdateSku = (updatedSku: CatalogSku) => {
-    setItems(items.map(sku => sku.catalog_sku_id === updatedSku.catalog_sku_id ? updatedSku : sku));
-    // Optionally update summary cards data but the re-fetch will do it or we can keep it simple
+  const handleNextPage = () => {
+    if (!hasMore || !nextCursor) return;
+    setCursorHistory(prev => {
+      const newHist = [...prev];
+      newHist[pageIndex] = nextCursor;
+      return newHist;
+    });
+    setPageIndex(p => p + 1);
   };
 
-  const filteredItems = items.filter(item => 
-    item.canonical_sku_code?.toLowerCase().includes(search.toLowerCase()) || 
-    item.display_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const handlePrevPage = () => {
+    setPageIndex(p => Math.max(0, p - 1));
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -95,51 +97,37 @@ export default function SkusPage() {
         </button>
       </div>
 
-      <SkuSummaryCards items={items} totalSkus={totalSkus} />
-
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search SKUs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1"
-        />
         <select
           value={channel}
-          onChange={(e) => { setChannel(e.target.value); setPage(1); }}
+          onChange={(e) => { 
+            setChannel(e.target.value); 
+            setPageIndex(0); 
+            setCursorHistory([]); 
+          }}
           className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
           <option value="all">All Channels</option>
           <option value="shopify">Shopify Only</option>
           <option value="amazon">Amazon Only</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 border rounded px-3 py-2 cursor-pointer hover:bg-slate-100">
-          <input
-            type="checkbox"
-            checked={showMissingData}
-            onChange={(e) => { setShowMissingData(e.target.checked); setPage(1); }}
-            className="rounded text-emerald-600 focus:ring-emerald-500"
-          />
-          Missing COGS
-        </label>
       </div>
 
-      <SkuTable items={filteredItems} isLoading={isLoading} onUpdateSku={handleUpdateSku} />
+      <SkuTable items={items} isLoading={isLoading} />
 
-      {!isLoading && items.length > 0 && (
+      {!isLoading && (pageIndex > 0 || hasMore) && (
         <div className="flex items-center justify-between mt-4">
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
+            onClick={handlePrevPage}
+            disabled={pageIndex === 0}
             className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
           >
             Previous
           </button>
-          <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+          <span className="text-sm text-slate-500">Page {pageIndex + 1}</span>
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            onClick={handleNextPage}
+            disabled={!hasMore}
             className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
           >
             Next
