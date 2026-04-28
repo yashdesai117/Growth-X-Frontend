@@ -41,7 +41,7 @@ export function SkuTable({ items, isLoading }: Props) {
         </TableHeader>
         <TableBody>
           {items.map((listing) => (
-            <TableRow key={listing.id}>
+            <TableRow key={listing.listing_id}>
               <TableCell className="font-mono text-xs">{listing.sku_code || '—'}</TableCell>
               <TableCell className="font-medium truncate max-w-[250px]" title={listing.product_name}>
                 {listing.product_name}

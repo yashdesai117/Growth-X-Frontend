@@ -252,7 +252,7 @@ export interface SkuListResponse {
 }
 
 export interface RawListing {
-  id: string;
+  listing_id: string;
   channel: 'shopify' | 'amazon';
   platform_sku_id: string;
   platform_product_id: string | null;

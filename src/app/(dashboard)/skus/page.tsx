@@ -31,11 +31,16 @@ export default function SkusPage() {
       if (currentCursor) q.append("cursor", currentCursor);
 
       const res = await apiClient<CatalogListingsResponse>(`/api/v1/catalog/listings?${q}`);
+      console.log("[SKUs] API response:", res);
       
       if (res.status === "success" && res.data) {
         setItems(res.data.listings);
         setNextCursor(res.data.next_cursor);
         setHasMore(res.data.has_more);
+      } else {
+        const errMsg = (res.error as any)?.message || "Unknown error from server";
+        console.error("[SKUs] API error:", res.error);
+        toast.error(`Failed to load listings: ${errMsg}`);
       }
     } catch (e) {
       toast.error("Failed to load listings");
