@@ -179,7 +179,12 @@ export function SkuTable({ items, isLoading, onRefresh }: Props) {
                     Complete
                   </span>
                 ) : (
-                  <span className="text-slate-400 text-xs">—</span>
+                  <span
+                    className="text-slate-400 text-xs"
+                    title="No orders processed yet — run a sync to compute margin data for this SKU"
+                  >
+                    No orders
+                  </span>
                 )}
               </TableCell>
               <TableCell>

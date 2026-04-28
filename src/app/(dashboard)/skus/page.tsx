@@ -56,16 +56,17 @@ export default function SkusPage() {
   const handleSyncSkus = async () => {
     setIsSyncing(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/skus/trigger-sku-sync`, {
+      const res = await apiClient("/api/v1/sync/trigger", {
         method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
+        body: JSON.stringify({ channel: "shopify" }),
       });
-      const json = await res.json();
-      if (json.success) {
-        toast.success("Sync triggered. This may take a few minutes.");
+      if (res.status === "success") {
+        toast.success("Sync triggered. Cost data will update in a few minutes.");
+        // Reload after a short delay to pick up any fast updates
+        setTimeout(loadData, 3000);
       } else {
-        toast.error(json.error?.message || "Failed to trigger sync");
+        const errMsg = (res.error as any)?.message || "Failed to trigger sync";
+        toast.error(errMsg);
       }
     } catch (e) {
       toast.error("Network error triggering sync");
