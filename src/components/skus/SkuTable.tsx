@@ -3,7 +3,7 @@ import { RawListing } from "@/types/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 
 interface Props {
@@ -100,6 +100,7 @@ export function SkuTable({ items, isLoading, onRefresh }: Props) {
             <TableHead>Channel</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Inventory</TableHead>
+            <TableHead>Cost Data</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -159,6 +160,27 @@ export function SkuTable({ items, isLoading, onRefresh }: Props) {
               </TableCell>
               <TableCell>
                 {listing.quantity_available != null ? listing.quantity_available : "—"}
+              </TableCell>
+              <TableCell>
+                {listing.has_missing_data === true ? (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+                    title="This SKU has missing cost inputs — margin may be overstated"
+                  >
+                    <AlertTriangle size={10} className="shrink-0" />
+                    Missing
+                  </span>
+                ) : listing.has_missing_data === false ? (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    title="All cost inputs are present for this SKU"
+                  >
+                    <CheckCircle2 size={10} className="shrink-0" />
+                    Complete
+                  </span>
+                ) : (
+                  <span className="text-slate-400 text-xs">—</span>
+                )}
               </TableCell>
               <TableCell>
                 <span className={`inline-flex px-2 py-0.5 text-[10px] rounded font-bold capitalize ${

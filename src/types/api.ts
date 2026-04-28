@@ -265,6 +265,8 @@ export interface RawListing {
   updated_at: string;
   is_mapped?: boolean;
   canonical_sku_code?: string;
+  /** true = has missing cost inputs, false = all costs present, null = not yet computed */
+  has_missing_data?: boolean | null;
 }
 
 export interface CatalogListingsResponse {
