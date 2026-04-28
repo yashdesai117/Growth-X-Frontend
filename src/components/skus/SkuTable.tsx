@@ -107,9 +107,11 @@ export function SkuTable({ items, isLoading, onRefresh }: Props) {
           {items.map((listing) => (
             <TableRow key={listing.listing_id}>
               <TableCell>
-                {listing.sku_code ? (
+                {listing.is_mapped ? (
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded border border-slate-200">{listing.sku_code}</span>
+                    <p className="text-[11px] text-[#22C55E] font-mono mt-0.5">
+                      {listing.canonical_sku_code}
+                    </p>
                     <button
                       onClick={() => handleUnmapSku(listing.listing_id, listing.platform_sku_id, listing.channel)}
                       disabled={isMapping === listing.listing_id}

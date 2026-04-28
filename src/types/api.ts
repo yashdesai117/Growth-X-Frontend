@@ -263,6 +263,8 @@ export interface RawListing {
   status: string;
   created_at: string;
   updated_at: string;
+  is_mapped?: boolean;
+  canonical_sku_code?: string;
 }
 
 export interface CatalogListingsResponse {
