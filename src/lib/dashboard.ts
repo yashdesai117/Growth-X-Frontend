@@ -94,11 +94,15 @@ export async function fetchSyncStatus(): Promise<SyncStatus> {
   return env.data;
 }
 
-export async function triggerSync(channel = "shopify"): Promise<void> {
-  await apiClient("/api/v1/sync/trigger", {
+export async function triggerSync(channel?: string): Promise<void> {
+  const body = channel ? { channel } : {};
+  const env = await apiClient("/api/v1/sync/trigger", {
     method: "POST",
-    body: JSON.stringify({ channel }),
+    body: JSON.stringify(body),
   });
+  if (env.status !== "success") {
+    throw new Error((env.error as any)?.message ?? "Failed to trigger sync");
+  }
 }
 
 /**

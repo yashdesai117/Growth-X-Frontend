@@ -25,6 +25,7 @@ import type {
   MarginTrend,
   SyncStatus,
 } from "@/types/api";
+import { toast } from "sonner";
 
 function ChannelRow({ ch }: { ch: ChannelStatus }) {
   return (
@@ -97,12 +98,14 @@ export default function OverviewPage() {
   const handleSyncNow = async () => {
     setIsSyncing(true);
     try {
-      await triggerSync("shopify");
+      await triggerSync();
+      toast.success("Sync triggered for all connected channels.");
       setTimeout(() => {
         setIsSyncing(false);
         loadAll();
       }, 3000);
-    } catch {
+    } catch (e: any) {
+      toast.error(e.message || "Failed to trigger sync");
       setIsSyncing(false);
     }
   };

@@ -179,18 +179,12 @@ export function SkuTable({ items, isLoading, onRefresh }: Props) {
                     Complete
                   </span>
                 ) : (
-                  <span
-                    className="text-slate-400 text-xs"
-                    title="No orders processed yet — run a sync to compute margin data for this SKU"
-                  >
-                    No orders
-                  </span>
+                  <span className="text-slate-400 text-xs">—</span>
                 )}
               </TableCell>
               <TableCell>
-                <span className={`inline-flex px-2 py-0.5 text-[10px] rounded font-bold capitalize ${
-                  listing.status === 'active' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] rounded font-bold capitalize ${listing.status === 'active' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                  }`}>
                   {listing.status}
                 </span>
               </TableCell>
